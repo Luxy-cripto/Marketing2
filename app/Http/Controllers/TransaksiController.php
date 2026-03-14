@@ -14,9 +14,11 @@ class TransaksiController extends Controller
     // Daftar transaksi
     public function index()
     {
-        $transaksis = Transaksi::with(['konsumen','produk'])->latest()->get();
+        $transaksis = Transaksi::with(['konsumen','produk'])
+            ->latest()
+            ->get();
 
-        // Produk terlaris (5 produk terbanyak terjual)
+        // Produk terlaris
         $produk_terlaris = Transaksi::selectRaw('produk_id, SUM(qty) as total_qty')
             ->groupBy('produk_id')
             ->with('produk')
@@ -32,16 +34,18 @@ class TransaksiController extends Controller
     {
         $konsumens = Konsumen::all();
         $produks = Produk::all();
+
         return view('transaksi.create', compact('konsumens','produks'));
     }
 
-    // Simpan transaksi baru
+    // Simpan transaksi
     public function store(Request $request)
     {
         $request->validate([
-            'konsumen_id'=>'required|exists:konsumens,id',
-            'produk_id'=>'required|exists:produks,id',
-            'qty'=>'required|integer|min:1'
+            'konsumen_id' => 'required|exists:konsumens,id',
+            'produk_id' => 'required|exists:produks,id',
+            'qty' => 'required|integer|min:1',
+            'tanggal_transaksi' => 'required|date'
         ]);
 
         $produk = Produk::findOrFail($request->produk_id);
@@ -52,32 +56,34 @@ class TransaksiController extends Controller
 
         // Buat transaksi
         $transaksi = Transaksi::create([
-    'konsumen_id'=>$request->konsumen_id,
-    'produk_id'=>$request->produk_id,
-    'qty'=>$request->qty,
-    'harga_satuan'=>$produk->harga,
-    'total'=>$produk->harga * $request->qty
-]);
+            'konsumen_id' => $request->konsumen_id,
+            'produk_id' => $request->produk_id,
+            'qty' => $request->qty,
+            'harga_satuan' => $produk->harga,
+            'total' => $produk->harga * $request->qty,
+            'tanggal_transaksi' => $request->tanggal_transaksi
+        ]);
 
-// Ubah status konsumen jadi Deal
-$konsumen = Konsumen::find($request->konsumen_id);
-$konsumen->status = 'Deal';
-$konsumen->save();
+        // Ubah status konsumen jadi Deal
+        $konsumen = Konsumen::find($request->konsumen_id);
+        $konsumen->status = 'Deal';
+        $konsumen->save();
 
-// Kurangi stok produk
-$produk->stok -= $request->qty;
-$produk->save();
+        // Kurangi stok produk
+        $produk->stok -= $request->qty;
+        $produk->save();
 
-// Follow-Up otomatis
-FollowUp::create([
-    'konsumen_id' => $transaksi->konsumen_id,
-    'user_id' => Auth::id(),
-    'status' => 'Belum Dihubungi',
-    'catatan' => 'Follow-up otomatis dari transaksi #' . $transaksi->id,
-    'follow_up_date' => now()
-]);
+        // Follow-Up otomatis
+        FollowUp::create([
+            'konsumen_id' => $transaksi->konsumen_id,
+            'user_id' => Auth::id(),
+            'status' => 'Belum Dihubungi',
+            'catatan' => 'Follow-up otomatis dari transaksi #' . $transaksi->id,
+            'follow_up_date' => now()
+        ]);
 
-        return redirect()->route('transaksi.index')->with('success','Transaksi berhasil disimpan!');
+        return redirect()->route('transaksi.index')
+            ->with('success','Transaksi berhasil disimpan!');
     }
 
     // Form edit transaksi
@@ -85,6 +91,7 @@ FollowUp::create([
     {
         $konsumens = Konsumen::all();
         $produks = Produk::all();
+
         return view('transaksi.edit', compact('transaksi','konsumens','produks'));
     }
 
@@ -92,33 +99,37 @@ FollowUp::create([
     public function update(Request $request, Transaksi $transaksi)
     {
         $request->validate([
-            'konsumen_id'=>'required|exists:konsumens,id',
-            'produk_id'=>'required|exists:produks,id',
-            'qty'=>'required|integer|min:1'
+            'konsumen_id' => 'required|exists:konsumens,id',
+            'produk_id' => 'required|exists:produks,id',
+            'qty' => 'required|integer|min:1',
+            'tanggal_transaksi' => 'required|date'
         ]);
 
         $produkLama = $transaksi->produk;
         $produkBaru = Produk::findOrFail($request->produk_id);
 
-        // Kembalikan stok produk lama
+        // Kembalikan stok lama
         $produkLama->stok += $transaksi->qty;
         $produkLama->save();
 
-        // Cek stok produk baru cukup
+        // Cek stok produk baru
         if ($produkBaru->stok < $request->qty) {
+
             // rollback stok lama
             $produkLama->stok -= $transaksi->qty;
             $produkLama->save();
+
             return back()->with('error','Stok produk baru tidak cukup!');
         }
 
         // Update transaksi
         $transaksi->update([
-            'konsumen_id'=>$request->konsumen_id,
-            'produk_id'=>$request->produk_id,
-            'qty'=>$request->qty,
-            'harga_satuan'=>$produkBaru->harga,
-            'total'=>$produkBaru->harga * $request->qty
+            'konsumen_id' => $request->konsumen_id,
+            'produk_id' => $request->produk_id,
+            'qty' => $request->qty,
+            'harga_satuan' => $produkBaru->harga,
+            'total' => $produkBaru->harga * $request->qty,
+            'tanggal_transaksi' => $request->tanggal_transaksi
         ]);
 
         // Kurangi stok produk baru

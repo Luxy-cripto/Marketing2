@@ -1,97 +1,99 @@
+```blade
 @extends('layouts.admin2')
 
 @section('content')
 
 <div class="container">
 
-<div class="card">
-<div class="card-header">
-<h4 class="card-title">✏️ Edit Transaksi</h4>
-</div>
+    <div class="card">
 
-<div class="card-body">
+        <div class="card-header">
+            <h4 class="card-title">✏️ Edit Transaksi</h4>
+        </div>
 
-<form action="{{ route('transaksi.update', $transaksi->id) }}" method="POST">
+        <div class="card-body">
 
-@csrf
-@method('PUT')
+            <form action="{{ route('transaksi.update', $transaksi->id) }}" method="POST">
 
-<div class="row">
+                @csrf
+                @method('PUT')
 
-<div class="col-md-6 mb-3">
-<label class="form-label">Konsumen</label>
+                <div class="row">
 
-<select name="konsumen_id" class="form-control" required>
+                    <!-- Konsumen -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Konsumen</label>
 
-@foreach($konsumens as $k)
+                        <select name="konsumen_id" class="form-control" required>
+                            @foreach($konsumens as $k)
+                                <option value="{{ $k->id }}"
+                                    {{ $transaksi->konsumen_id == $k->id ? 'selected' : '' }}>
+                                    {{ $k->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-<option value="{{ $k->id }}"
-{{ $transaksi->konsumen_id == $k->id ? 'selected' : '' }}>
+                    <!-- Produk -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Produk</label>
 
-{{ $k->nama }}
+                        <select name="produk_id" class="form-control" required>
+                            @foreach($produks as $p)
+                                <option value="{{ $p->id }}"
+                                    {{ $transaksi->produk_id == $p->id ? 'selected' : '' }}>
+                                    {{ $p->nama }} - Rp {{ number_format($p->harga,0,',','.') }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-</option>
+                    <!-- Jumlah -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Jumlah</label>
 
-@endforeach
+                        <input
+                            type="number"
+                            name="qty"
+                            class="form-control"
+                            min="1"
+                            value="{{ $transaksi->qty }}"
+                            required>
+                    </div>
 
-</select>
-</div>
+                    <!-- Tanggal Transaksi -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Tanggal Transaksi</label>
 
+                        <input
+                            type="date"
+                            name="tanggal_transaksi"
+                            class="form-control"
+                            value="{{ $transaksi->tanggal_transaksi }}"
+                            required>
+                    </div>
 
-<div class="col-md-6 mb-3">
-<label class="form-label">Produk</label>
+                </div>
 
-<select name="produk_id" class="form-control" required>
+                <div class="mt-3">
 
-@foreach($produks as $p)
+                    <button class="btn btn-success">
+                        Update
+                    </button>
 
-<option value="{{ $p->id }}"
-{{ $transaksi->produk_id == $p->id ? 'selected' : '' }}>
+                    <a href="{{ route('transaksi.index') }}" class="btn btn-secondary">
+                        Batal
+                    </a>
 
-{{ $p->nama }} - Rp {{ number_format($p->harga,0,',','.') }}
+                </div>
 
-</option>
+            </form>
 
-@endforeach
+        </div>
 
-</select>
-</div>
-
-
-<div class="col-md-6 mb-3">
-<label class="form-label">Jumlah</label>
-
-<input
-type="number"
-name="qty"
-class="form-control"
-min="1"
-value="{{ $transaksi->qty }}"
-required>
-
-</div>
-
-
-</div>
-
-
-<div class="mt-3">
-
-<button class="btn btn-success">
-Update
-</button>
-
-<a href="{{ route('transaksi.index') }}" class="btn btn-secondary">
-Batal
-</a>
-
-</div>
-
-</form>
-
-</div>
-</div>
+    </div>
 
 </div>
 
 @endsection
+```

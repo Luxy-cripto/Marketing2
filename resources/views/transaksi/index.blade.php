@@ -35,6 +35,7 @@
                             <th>Qty</th>
                             <th>Harga Satuan</th>
                             <th>Total</th>
+                            <th>Tanggal Transaksi</th>
                             <th width="140">Aksi</th>
                         </tr>
                     </thead>
@@ -46,6 +47,7 @@
                             <td>{{ $t->qty }}</td>
                             <td>Rp {{ number_format($t->harga_satuan,0,',','.') }}</td>
                             <td><strong>Rp {{ number_format($t->total,0,',','.') }}</strong></td>
+                            <td>{{ \Carbon\Carbon::parse($t->tanggal_transaksi)->format('d M Y') }}</td>
                             <td>
                                 <div class="d-flex gap-2">
 
@@ -69,7 +71,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
+                            <td colspan="10" class="text-center text-muted py-4">
                                 Tidak ada data transaksi
                             </td>
                         </tr>

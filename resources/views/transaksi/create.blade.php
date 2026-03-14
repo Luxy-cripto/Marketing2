@@ -1,86 +1,99 @@
+```blade
 @extends('layouts.admin2')
 
 @section('content')
 
 <div class="container">
 
-<div class="card">
-<div class="card-header">
-<h4 class="card-title">➕ Tambah Transaksi</h4>
-</div>
+    <div class="card">
 
-<div class="card-body">
+        <div class="card-header">
+            <h4 class="card-title">➕ Tambah Transaksi</h4>
+        </div>
 
-<form action="{{ route('transaksi.store') }}" method="POST">
-@csrf
+        <div class="card-body">
 
-<div class="row">
+            <form action="{{ route('transaksi.store') }}" method="POST">
+                @csrf
 
-<div class="col-md-6 mb-3">
-<label class="form-label">Konsumen</label>
+                <div class="row">
 
-<select name="konsumen_id" class="form-control" required>
-<option value="">-- Pilih Konsumen --</option>
+                    <!-- Konsumen -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Konsumen</label>
 
-@foreach($konsumens as $k)
-<option value="{{ $k->id }}">
-{{ $k->nama }}
-</option>
-@endforeach
+                        <select name="konsumen_id" class="form-control" required>
+                            <option value="">-- Pilih Konsumen --</option>
 
-</select>
-</div>
+                            @foreach($konsumens as $k)
+                                <option value="{{ $k->id }}">
+                                    {{ $k->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
+                    <!-- Produk -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Produk</label>
 
-<div class="col-md-6 mb-3">
-<label class="form-label">Produk</label>
+                        <select name="produk_id" class="form-control" required>
+                            <option value="">-- Pilih Produk --</option>
 
-<select name="produk_id" class="form-control" required>
-<option value="">-- Pilih Produk --</option>
+                            @foreach($produks as $p)
+                                <option value="{{ $p->id }}">
+                                    {{ $p->nama }} - Rp {{ number_format($p->harga,0,',','.') }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-@foreach($produks as $p)
-<option value="{{ $p->id }}">
-{{ $p->nama }} - Rp {{ number_format($p->harga,0,',','.') }}
-</option>
-@endforeach
+                    <!-- Jumlah -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Jumlah</label>
 
-</select>
-</div>
+                        <input
+                            type="number"
+                            name="qty"
+                            class="form-control"
+                            min="1"
+                            value="1"
+                            required>
+                    </div>
 
+                    <!-- Tanggal Transaksi -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Tanggal Transaksi</label>
 
-<div class="col-md-6 mb-3">
-<label class="form-label">Jumlah</label>
+                        <input
+                            type="date"
+                            name="tanggal_transaksi"
+                            class="form-control"
+                            value="{{ date('Y-m-d') }}"
+                            required>
+                    </div>
 
-<input
-type="number"
-name="qty"
-class="form-control"
-min="1"
-value="1"
-required>
-</div>
+                </div>
 
+                <div class="mt-3">
 
-</div>
+                    <button class="btn btn-success">
+                        Simpan
+                    </button>
 
+                    <a href="{{ route('transaksi.index') }}" class="btn btn-secondary">
+                        Batal
+                    </a>
 
-<div class="mt-3">
+                </div>
 
-<button class="btn btn-success">
-Simpan
-</button>
+            </form>
 
-<a href="{{ route('transaksi.index') }}" class="btn btn-secondary">
-Batal
-</a>
+        </div>
 
-</div>
-
-</form>
-
-</div>
-</div>
+    </div>
 
 </div>
 
 @endsection
+```

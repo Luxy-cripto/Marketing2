@@ -11,7 +11,8 @@ class Transaksi extends Model
         'produk_id',
         'qty',
         'harga_satuan',
-        'total'
+        'total',
+        'tanggal_transaksi'
     ];
 
     protected static function booted()

@@ -12,6 +12,7 @@ use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\UserController;
 use App\Exports\KonsumenExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\KonsumenImport;
 
 /*
 |--------------------------------------------------------------------------
@@ -155,9 +156,23 @@ Route::middleware(['auth'])->group(function () {
     */
 
     Route::get('/export-konsumen', function () {
-        return Excel::download(new KonsumenExport, 'konsumen.xlsx');
-    })->name('export.konsumen');
 
+        $status = request('status');
+
+        return Excel::download(
+            new KonsumenExport($status),
+            'konsumen.xlsx'
+        );
+
+    })->name('konsumen.export');
+
+    /*
+    |--------------------------------------------------------------------------
+    | IMPORT EXCEL
+    |--------------------------------------------------------------------------
+    */
+    Route::post('/import-konsumen', [KonsumenController::class, 'import'])
+        ->name('konsumen.import');
 
     /*
     |--------------------------------------------------------------------------
@@ -184,3 +199,5 @@ Route::middleware(['auth'])->group(function () {
     })->name('logout');
 
 });
+
+
