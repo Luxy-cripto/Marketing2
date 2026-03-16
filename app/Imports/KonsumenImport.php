@@ -9,27 +9,43 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
 class KonsumenImport implements ToModel, WithHeadingRow
 {
-        public function model(array $row)
-        {
-                return new Konsumen([
 
-                        'nama' => $row['nama'] ?? '',
+    public function model(array $row)
+    {
 
-                        'no_hp' => $row['no_hp'] ?? '',
+        $status = strtolower($row['status'] ?? 'prospek');
 
-                        'email' => $row['email'] ?? null,
+        // NORMALISASI STATUS
+        if ($status == 'deal') {
 
-                        'alamat' => $row['alamat'] ?? null,
+            $status = 'Prospek'; // belum transaksi
 
-                        'sumber_lead' => $row['sumber_lead'] ?? 'Import Excel',
+        } elseif ($status == 'follow up') {
 
-                        'status' => in_array(
-                                $row['status'] ?? '',
-                                ['Prospek','Deal','Tidak Tertarik']
-                        ) ? $row['status'] : 'Prospek',
+            $status = 'Prospek';
 
-                        'user_id' => Auth::id()
+        } elseif ($status == 'tidak tertarik') {
 
-                ]);
+            $status = 'Tidak Tertarik';
+
+        } else {
+
+            $status = 'Prospek';
+
         }
+
+        return new Konsumen([
+
+            'nama' => $row['nama'] ?? '',
+            'no_hp' => $row['no_hp'] ?? '',
+            'email' => $row['email'] ?? null,
+            'alamat' => $row['alamat'] ?? null,
+            'sumber_lead' => $row['sumber_lead'] ?? 'Import Excel',
+            'status' => $status,
+            'user_id' => Auth::id(),
+
+        ]);
+
+    }
+
 }

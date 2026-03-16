@@ -12,7 +12,8 @@ class Transaksi extends Model
         'qty',
         'harga_satuan',
         'total',
-        'tanggal_transaksi'
+        'tanggal_transaksi',
+        'status'
     ];
 
     protected static function booted()

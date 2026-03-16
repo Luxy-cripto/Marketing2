@@ -133,8 +133,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('targets', TargetController::class);
 
-    Route::resource('transaksi', TransaksiController::class);
-
 
     /*
     |--------------------------------------------------------------------------
@@ -198,6 +196,27 @@ Route::middleware(['auth'])->group(function () {
 
     })->name('logout');
 
+    /*
+    |--------------------------------------------------------------------------
+    | teransaksi
+    |--------------------------------------------------------------------------
+    */
+    Route::resource('transaksi', TransaksiController::class);
+    Route::get('/transaksi-success/{id}', function ($id) {
+    $transaksi = \App\Models\Transaksi::findOrFail($id);
+    return view('transaksi.success', compact('transaksi'));
+    })->name('transaksi.success');
+
+    Route::get('/transaksi-invoice/{id}', [TransaksiController::class,'invoice'])->name('transaksi.invoice');
+    Route::get('/export-transaksi', [TransaksiController::class,'exportTransaksi'])
+    ->name('export.transaksi');
+
+    Route::get('/export-produk-terlaris', [TransaksiController::class,'exportProdukTerlaris'])
+    ->name('export.produk.terlaris');
+    Route::post('/transaksi/{transaksi}/bayar', [TransaksiController::class, 'bayar'])
+    ->name('transaksi.bayar');
+
+    Route::get('followups/{followup}/show', [FollowUpController::class, 'show'])->name('followups.show');
+    Route::resource('followups', FollowUpController::class);
+
 });
-
-

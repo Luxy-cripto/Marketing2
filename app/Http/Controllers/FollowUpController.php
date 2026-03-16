@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FollowUp;
 use App\Models\Konsumen;
+use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,7 +27,6 @@ class FollowUpController extends Controller
         return view('followups.index', compact('followUps'));
     }
 
-
     // =========================
     // FORM TAMBAH FOLLOW UP
     // =========================
@@ -36,7 +36,6 @@ class FollowUpController extends Controller
 
         return view('followups.create', compact('konsumens'));
     }
-
 
     // =========================
     // SIMPAN FOLLOW UP
@@ -50,7 +49,7 @@ class FollowUpController extends Controller
             'follow_up_date' => 'nullable|date_format:Y-m-d\TH:i',
         ]);
 
-        FollowUp::create([
+        $followUp = FollowUp::create([
             'konsumen_id' => $request->konsumen_id,
             'status' => $request->status,
             'catatan' => $request->catatan,
@@ -58,47 +57,77 @@ class FollowUpController extends Controller
             'user_id' => Auth::id(),
         ]);
 
+        // =====================
+        // UPDATE STATUS KONSUMEN & TRANSAKSI OTOMATIS
+        // =====================
+        $konsumen = Konsumen::find($request->konsumen_id);
+
+        if($konsumen){
+            $konsumen->status = $request->status;
+            $konsumen->save();
+
+            // Jika follow-up status "Sudah Bayar", update transaksi terkait
+            if(strtolower($request->status) === 'sudah bayar'){
+                Transaksi::where('konsumen_id', $konsumen->id)
+                    ->update(['status' => 'Sudah Bayar']);
+            }
+        }
+
         return redirect()->route('followups.index')
             ->with('success', 'Follow-up berhasil ditambahkan!');
     }
-
 
     // =========================
     // FORM EDIT FOLLOW UP
     // =========================
     public function edit($id)
-{
-    $followUp = FollowUp::findOrFail($id);
-    $konsumens = Konsumen::all();
+    {
+        $followUp = FollowUp::findOrFail($id);
+        $konsumens = Konsumen::all();
 
-    return view('followups.edit', compact('followUp','konsumens'));
-}
+        return view('followups.edit', compact('followUp','konsumens'));
+    }
 
     // =========================
     // UPDATE FOLLOW UP
     // =========================
-   public function update(Request $request, $id)
-{
-    $followUp = FollowUp::findOrFail($id);
+    public function update(Request $request, $id)
+    {
+        $followUp = FollowUp::findOrFail($id);
 
-    $request->validate([
-        'konsumen_id' => 'required',
-        'status' => 'required',
-        'catatan' => 'nullable',
-        'follow_up_date' => 'nullable'
-    ]);
+        $request->validate([
+            'konsumen_id' => 'required|exists:konsumens,id',
+            'status' => 'required|string',
+            'catatan' => 'nullable|string',
+            'follow_up_date' => 'nullable|date_format:Y-m-d\TH:i',
+        ]);
 
-    $followUp->update([
-        'konsumen_id' => $request->konsumen_id,
-        'status' => $request->status,
-        'catatan' => $request->catatan,
-        'follow_up_date' => $request->follow_up_date
-    ]);
+        $followUp->update([
+            'konsumen_id' => $request->konsumen_id,
+            'status' => $request->status,
+            'catatan' => $request->catatan,
+            'follow_up_date' => $request->follow_up_date
+        ]);
 
-    return redirect()->route('followups.index')
-        ->with('success','Data berhasil diupdate');
-}
+        // =====================
+        // UPDATE STATUS KONSUMEN & TRANSAKSI OTOMATIS
+        // =====================
+        $konsumen = Konsumen::find($request->konsumen_id);
 
+        if($konsumen){
+            $konsumen->status = $request->status;
+            $konsumen->save();
+
+            // Jika status follow-up "Sudah Bayar", semua transaksi konsumen diupdate
+            if(strtolower($request->status) === 'sudah bayar'){
+                Transaksi::where('konsumen_id', $konsumen->id)
+                    ->update(['status' => 'Sudah Bayar']);
+            }
+        }
+
+        return redirect()->route('followups.index')
+            ->with('success','Data berhasil diupdate');
+    }
 
     // =========================
     // HAPUS FOLLOW UP
@@ -116,5 +145,13 @@ class FollowUpController extends Controller
 
         return redirect()->route('followups.index')
             ->with('success', 'Follow-up berhasil dihapus!');
+    }
+
+    // =========================
+    // API SHOW FOLLOW UP
+    // =========================
+    public function show(FollowUp $followup)
+    {
+        return response()->json($followup->load('konsumen'));
     }
 }
