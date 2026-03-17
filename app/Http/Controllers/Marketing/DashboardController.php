@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Marketing;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
 use App\Models\Konsumen;
 use App\Models\Target;
 use App\Models\Transaksi;
@@ -12,87 +11,106 @@ use App\Models\FollowUp;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $user = Auth::user();
 
-        // Filter bulan/tahun dari query param (default bulan ini)
-        $bulan = $request->query('bulan', now()->month);
-        $tahun = $request->query('tahun', now()->year);
-
-        // ===== TARGET BULANAN =====
+        // =============================
+        // TARGET BULANAN
+        // =============================
         $target = Target::where('user_id', $user->id)
-            ->whereMonth('created_at', $bulan)
-            ->whereYear('created_at', $tahun)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
             ->first();
 
-        $targetLead = $target->target_lead ?? 0;
-        $targetOmset = $target->target_omset ?? 0;
+        $targetLead = $target ? $target->target_lead : 0;
+        $targetOmset = $target ? $target->target_omset : 0;
 
-        // ===== TOTAL LEAD =====
+        // =============================
+        // LEAD MASUK
+        // =============================
         $totalLead = Konsumen::where('user_id', $user->id)
-            ->whereMonth('created_at', $bulan)
-            ->whereYear('created_at', $tahun)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
             ->count();
 
-        // ===== DEAL & TIDAK TERTARIK =====
+        // =============================
+        // DEAL
+        // =============================
         $deal = Konsumen::where('user_id', $user->id)
-            ->whereRaw('LOWER(TRIM(status))="deal"')
+            ->where('status', 'Deal')
             ->count();
 
+        // =============================
+        // TIDAK TERTARIK
+        // =============================
         $tidakTertarik = Konsumen::where('user_id', $user->id)
-            ->whereRaw('LOWER(TRIM(status))="tidak tertarik"')
+            ->where('status', 'Tidak Tertarik')
             ->count();
 
-        // ===== CLOSING BULAN INI =====
+        // =============================
+        // CLOSING BULAN INI
+        // =============================
         $closing = Konsumen::where('user_id', $user->id)
-            ->whereRaw('LOWER(TRIM(status))="deal"')
-            ->whereMonth('created_at', $bulan)
-            ->whereYear('created_at', $tahun)
+            ->where('status', 'Deal')
+            ->whereMonth('updated_at', now()->month)
+            ->whereYear('updated_at', now()->year)
             ->count();
 
-        // ===== OMSET BULAN INI =====
-        $totalOmset = Transaksi::whereHas('konsumen', fn($q) => $q->where('user_id', $user->id))
-            ->whereRaw('LOWER(TRIM(status))="sudah bayar"')
-            ->whereMonth('created_at', $bulan)
-            ->whereYear('created_at', $tahun)
+        // =============================
+        // OMSET BULAN INI
+        // =============================
+        $totalOmset = Transaksi::whereHas('konsumen', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
             ->sum('total');
 
-        // ===== PROGRESS TARGET =====
-        $progress = $targetOmset > 0 ? min(($totalOmset / $targetOmset) * 100, 100) : 0;
+        // =============================
+        // PROGRESS TARGET OMSET
+        // =============================
+        $progress = ($targetOmset > 0)
+            ? min(($totalOmset / $targetOmset) * 100, 100)
+            : 0;
 
-        // ===== KPI LEAD PER MARKETING =====
+        // =============================
+        // KPI LEAD PER MARKETING
+        // =============================
         $kpi = Konsumen::selectRaw('user_id, count(*) as total')
-            ->whereMonth('created_at', $bulan)
-            ->whereYear('created_at', $tahun)
+            ->whereMonth('created_at', now()->month)
             ->groupBy('user_id')
             ->with('user')
             ->get();
 
-        // ===== FOLLOW UP HARI INI =====
+        // =============================
+        // FOLLOW UP HARI INI
+        // =============================
         $followups = FollowUp::with('konsumen')
             ->where('user_id', $user->id)
             ->whereDate('follow_up_date', now())
             ->orderBy('follow_up_date')
             ->get();
 
-        // ===== DEAL SUDAH BAYAR =====
+        // =============================
+        // DEAL SUDAH BAYAR
+        // =============================
         $sudahBayar = Konsumen::where('user_id', $user->id)
-            ->whereHas('transaksis', fn($q) => $q->whereRaw('LOWER(TRIM(status))="sudah bayar"'))
-            ->with(['transaksis' => fn($q) => $q->whereRaw('LOWER(TRIM(status))="sudah bayar"')])
+            ->whereHas('transaksis')
+            ->with('transaksis')
             ->get();
 
-        // ===== DEAL BELUM BAYAR =====
+        // =============================
+        // DEAL BELUM BAYAR
+        // =============================
         $belumBayar = Konsumen::where('user_id', $user->id)
-            ->whereRaw('LOWER(TRIM(status))="deal"')
-            ->whereDoesntHave('transaksis', fn($q) => $q->whereRaw('LOWER(TRIM(status))="sudah bayar"'))
-            ->with('transaksis')
+            ->where('status', 'Deal')
+            ->whereDoesntHave('transaksis')
             ->get();
 
         return view('marketing.dashboard', compact(
             'target',
             'targetLead',
-            'targetOmset',
             'totalLead',
             'deal',
             'tidakTertarik',
@@ -106,7 +124,6 @@ class DashboardController extends Controller
         ));
     }
 
-    // API follow-up hari ini
     public function followupsToday()
     {
         $user = Auth::user();

@@ -115,7 +115,7 @@ let countdown = setInterval(function(){
 
     }
 
-},1000);
+},500);
 
 </script>
 
