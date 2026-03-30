@@ -18,7 +18,7 @@ class DashboardController extends Controller
         $isAdmin = $user->role === 'admin';
 
         // =========================
-        // FILTER BULAN & TAHUN (AUTO SEKARANG)
+        // FILTER BULAN & TAHUN
         // =========================
         $bulan = $request->bulan ?? now()->month;
         $tahun = $request->tahun ?? now()->year;
@@ -47,14 +47,12 @@ class DashboardController extends Controller
             ->count();
 
         // =========================
-        // DEAL (LEAD JADI DEAL)
+        // DEAL (status konsumen)
         // =========================
         $deal = Konsumen::when(!$isAdmin, function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
             ->where('status', 'Deal')
-            ->whereMonth('updated_at', $bulan)
-            ->whereYear('updated_at', $tahun)
             ->count();
 
         // =========================
@@ -67,29 +65,25 @@ class DashboardController extends Controller
             ->count();
 
         // =========================
-        // 🔥 CLOSING (SUDAH BAYAR)
+        // 🔥 CLOSING (FIX TOTAL SEMUA)
         // =========================
         $closing = Transaksi::when(!$isAdmin, function ($q) use ($user) {
                 $q->whereHas('konsumen', function ($qq) use ($user) {
                     $qq->where('user_id', $user->id);
                 });
             })
-            ->whereIn('status', ['Lunas','Sudah Bayar'])
-            ->whereMonth('tanggal_transaksi', $bulan)
-            ->whereYear('tanggal_transaksi', $tahun)
+            ->where('status', 'Lunas')
             ->count();
 
         // =========================
-        // OMSET (HANYA YANG BAYAR)
+        // OMSET (HANYA LUNAS)
         // =========================
         $totalOmset = Transaksi::when(!$isAdmin, function ($q) use ($user) {
                 $q->whereHas('konsumen', function ($qq) use ($user) {
                     $qq->where('user_id', $user->id);
                 });
             })
-            ->whereIn('status', ['Lunas','Sudah Bayar'])
-            ->whereMonth('tanggal_transaksi', $bulan)
-            ->whereYear('tanggal_transaksi', $tahun)
+            ->where('status', 'Lunas')
             ->sum('total');
 
         // =========================
@@ -100,7 +94,7 @@ class DashboardController extends Controller
                     $qq->where('user_id', $user->id);
                 });
             })
-            ->whereIn('status', ['Lunas','Sudah Bayar'])
+            ->where('status', 'Lunas')
             ->count();
 
         $totalLunas = Transaksi::when(!$isAdmin, function ($q) use ($user) {
@@ -108,9 +102,7 @@ class DashboardController extends Controller
                     $qq->where('user_id', $user->id);
                 });
             })
-            ->whereIn('status', ['Lunas','Sudah Bayar'])
-            ->whereMonth('tanggal_transaksi', $bulan)
-            ->whereYear('tanggal_transaksi', $tahun)
+            ->where('status', 'Lunas')
             ->sum('total');
 
         // =========================
@@ -130,8 +122,6 @@ class DashboardController extends Controller
                 });
             })
             ->where('status', 'Belum Bayar')
-            ->whereMonth('tanggal_transaksi', $bulan)
-            ->whereYear('tanggal_transaksi', $tahun)
             ->sum('total');
 
         // =========================
@@ -163,8 +153,8 @@ class DashboardController extends Controller
         // LIST SUDAH BAYAR
         // =========================
         $sudahBayar = Konsumen::when(!$isAdmin, fn($q) => $q->where('user_id', $user->id))
-            ->whereHas('transaksis', fn($q) => $q->whereIn('status', ['Lunas','Sudah Bayar']))
-            ->with(['transaksis' => fn($q) => $q->whereIn('status', ['Lunas','Sudah Bayar'])->with('produk')])
+            ->whereHas('transaksis', fn($q) => $q->where('status', 'Lunas'))
+            ->with(['transaksis' => fn($q) => $q->where('status', 'Lunas')->with('produk')])
             ->get();
 
         // =========================

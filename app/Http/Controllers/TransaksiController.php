@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 class TransaksiController extends Controller
 {
     // ===============================
-    // 🔥 FUNCTION AUTO SYNC STATUS
+    // 🔥 AUTO SYNC STATUS KONSUMEN
     // ===============================
     private function syncStatusKonsumen($konsumen_id)
     {
@@ -25,11 +25,10 @@ class TransaksiController extends Controller
 
         if (!$konsumen) return;
 
-        $adaLunas = $konsumen->transaksis()
-            ->where('status', 'Lunas')
-            ->exists();
+        // 🔥 LOGIKA BARU: ADA TRANSAKSI = DEAL
+        $adaTransaksi = $konsumen->transaksis()->exists();
 
-        $konsumen->status = $adaLunas ? 'Deal' : 'Prospek';
+        $konsumen->status = $adaTransaksi ? 'Deal' : 'Prospek';
         $konsumen->save();
     }
 
@@ -160,7 +159,7 @@ class TransaksiController extends Controller
                 'status' => $request->status
             ]);
 
-            // 🔥 AUTO SYNC
+            // 🔥 AUTO DEAL LANGSUNG
             $this->syncStatusKonsumen($request->konsumen_id);
 
             $produk->stok -= $request->qty;
@@ -235,7 +234,7 @@ class TransaksiController extends Controller
             $produkBaru->stok -= $request->qty;
             $produkBaru->save();
 
-            // 🔥 AUTO SYNC
+            // 🔥 AUTO DEAL
             $this->syncStatusKonsumen($request->konsumen_id);
 
             DB::commit();
@@ -266,7 +265,7 @@ class TransaksiController extends Controller
 
             $transaksi->delete();
 
-            // 🔥 AUTO SYNC
+            // 🔥 UPDATE STATUS
             $this->syncStatusKonsumen($konsumen_id);
 
             DB::commit();
@@ -291,7 +290,7 @@ class TransaksiController extends Controller
             $transaksi->status = 'Lunas';
             $transaksi->save();
 
-            // 🔥 AUTO SYNC
+            // 🔥 TETAP DEAL (SUDAH PASTI)
             $this->syncStatusKonsumen($transaksi->konsumen_id);
 
             DB::commit();
@@ -304,10 +303,13 @@ class TransaksiController extends Controller
             return back()->with('error',$e->getMessage());
         }
     }
-        public function show($id)
+
+    // ===============================
+    // DETAIL
+    // ===============================
+    public function show($id)
     {
         $transaksi = Transaksi::with('konsumen', 'produk')->findOrFail($id);
-
         return view('transaksi.show', compact('transaksi'));
     }
 }

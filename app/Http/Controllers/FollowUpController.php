@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FollowUp;
 use App\Models\Konsumen;
-use App\Models\Transaksi; // ✅ TAMBAHAN
+use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -27,7 +27,6 @@ class FollowUpController extends Controller
         return view('followups.index', compact('followUps'));
     }
 
-
     // =========================
     // FORM CREATE
     // =========================
@@ -36,7 +35,6 @@ class FollowUpController extends Controller
         $konsumens = Konsumen::all();
         return view('followups.create', compact('konsumens'));
     }
-
 
     // =========================
     // STORE
@@ -62,7 +60,6 @@ class FollowUpController extends Controller
             ->with('success', 'Follow-up berhasil ditambahkan!');
     }
 
-
     // =========================
     // FORM EDIT
     // =========================
@@ -72,7 +69,6 @@ class FollowUpController extends Controller
 
         $followUp = FollowUp::findOrFail($id);
 
-        // 🔒 SECURITY
         if(!in_array($user->role, ['admin','marketing']) && $followUp->user_id != $user->id){
             return redirect()->route('followups.index')
                 ->with('error','Tidak punya akses');
@@ -83,9 +79,8 @@ class FollowUpController extends Controller
         return view('followups.edit', compact('followUp','konsumens'));
     }
 
-
     // =========================
-    // UPDATE + AUTO SYNC TRANSAKSI
+    // UPDATE + AUTO SYNC 🔥
     // =========================
     public function update(Request $request, $id)
     {
@@ -93,7 +88,6 @@ class FollowUpController extends Controller
 
         $followUp = FollowUp::findOrFail($id);
 
-        // 🔒 SECURITY
         if(!in_array($user->role, ['admin','marketing']) && $followUp->user_id != $user->id){
             return redirect()->route('followups.index')
                 ->with('error','Tidak punya akses');
@@ -106,7 +100,9 @@ class FollowUpController extends Controller
             'follow_up_date' => 'nullable|date',
         ]);
 
+        // =========================
         // ✅ UPDATE FOLLOW UP
+        // =========================
         $followUp->update([
             'konsumen_id' => $request->konsumen_id,
             'status' => $request->status,
@@ -117,7 +113,6 @@ class FollowUpController extends Controller
         // =========================
         // 🔥 AUTO UPDATE TRANSAKSI
         // =========================
-
         $transaksi = Transaksi::where('konsumen_id', $followUp->konsumen_id)
             ->latest()
             ->first();
@@ -135,10 +130,27 @@ class FollowUpController extends Controller
             $transaksi->save();
         }
 
+        // =========================
+        // 🔥 AUTO UPDATE KONSUMEN
+        // =========================
+        $konsumen = Konsumen::find($followUp->konsumen_id);
+
+        if ($konsumen) {
+
+            if ($request->status == 'Sudah Bayar') {
+                $konsumen->status = 'Deal';
+            }
+
+            if ($request->status == 'Belum Bayar') {
+                $konsumen->status = 'Prospek';
+            }
+
+            $konsumen->save();
+        }
+
         return redirect()->route('followups.index')
             ->with('success','Data berhasil diupdate & transaksi ikut diperbarui');
     }
-
 
     // =========================
     // DELETE
@@ -151,7 +163,7 @@ class FollowUpController extends Controller
 
         if(!in_array($user->role, ['admin','marketing']) && $followUp->user_id != $user->id){
             return redirect()->route('followups.index')
-                ->with('error','Tidak memiliki izin menghapus follow-up ini');
+                ->with('error','Tidak memiliki izin');
         }
 
         $followUp->delete();
