@@ -77,6 +77,75 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+       <div class="row g-3 mt-2">
+
+        <!-- LUNAS -->
+     <div class="col-md-6">
+            <div class="card shadow-sm text-center border-0">
+                <div class="card-body">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+
+                    <p class="text-muted mb-1">Lunas</p>
+
+                    <h2 class="fw-bold text-success">
+                        {{ $jumlahLunas }} Transaksi
+                    </h2>
+
+                    <small class="text-muted">
+                        Rp {{ number_format($totalLunas,0,',','.') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- BELUM DIBAYAR -->
+        <div class="col-md-6">
+            <div class="card shadow-sm text-center border-0">
+                <div class="card-body">
+                    <i class="fas fa-money-bill-wave fa-2x text-primary mb-2"></i>
+
+                    <p class="text-muted mb-1">Belum Dibayar</p>
+
+                    <h2 class="fw-bold text-primary">
+                        {{ $jumlahBelumBayar }} Transaksi
+                    </h2>
+
+                    <small class="text-muted">
+                        Rp {{ number_format($totalBelumBayar,0,',','.') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+        <div c lass="row mt-3">
+
+            <div class="col-md-12">
+
+                <div class="card shadow-sm">
+
+                    <div class="card-body">
+
+                        <h5 class="fw-bold">📋 Keterangan</h5>
+
+                        <ul>
+                            <li><strong>Target Lead:</strong> Jumlah lead yang ditargetkan untuk bulan ini.</li>
+                            <li><strong>Lead Masuk:</strong> Jumlah lead yang berhasil masuk ke sistem.</li>
+                            <li><strong>Deal:</strong> Jumlah lead yang berhasil dikonversi menjadi deal.</li>
+                            <li><strong>Tidak Tertarik:</strong> Jumlah lead yang menyatakan tidak tertarik.</li>
+                            <li><strong>Closing:</strong> Jumlah deal yang berhasil ditutup dengan sukses.</li>
+                            <li><strong>Total Omset:</strong> Total pendapatan yang dihasilkan dari deal yang berhasil ditutup.</li>
+                        </ul>
+
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
 

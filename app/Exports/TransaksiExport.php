@@ -33,46 +33,50 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
         $query = Transaksi::with(['konsumen','produk']);
 
         // 🔍 SEARCH
-        if($this->search){
-            $query->where(function($q){
-                $q->whereHas('konsumen', function($k){
-                    $k->where('nama','like','%'.$this->search.'%');
+        if ($this->search) {
+            $query->where(function ($q) {
+                $q->whereHas('konsumen', function ($k) {
+                    $k->where('nama', 'like', '%' . $this->search . '%');
                 })
-                ->orWhereHas('produk', function($p){
-                    $p->where('nama','like','%'.$this->search.'%');
+                ->orWhereHas('produk', function ($p) {
+                    $p->where('nama', 'like', '%' . $this->search . '%');
                 });
             });
         }
 
         // 📦 FILTER PRODUK
-        if($this->produkId){
+        if ($this->produkId) {
             $query->where('produk_id', $this->produkId);
         }
 
         // 📅 FILTER TANGGAL
-        if($this->start && $this->end){
+        if ($this->start && $this->end) {
             $query->whereBetween('tanggal_transaksi', [$this->start, $this->end]);
-        } elseif($this->start){
+        } elseif ($this->start) {
             $query->whereDate('tanggal_transaksi', '>=', $this->start);
-        } elseif($this->end){
+        } elseif ($this->end) {
             $query->whereDate('tanggal_transaksi', '<=', $this->end);
         }
 
         $data = $query->get();
 
-        // 🔥 FIX OMZET (HANYA SUDAH BAYAR)
-        $this->totalOmzet = $data->where('status','Sudah Bayar')->sum('total');
+        // 🔥 FIX OMZET (SUPPORT MULTI STATUS BIAR AMAN)
+        $this->totalOmzet = $data
+            ->whereIn('status', ['Lunas', 'Sudah Bayar'])
+            ->sum('total');
 
-        return $data->map(function($t){
+        return $data->map(function ($t) {
             return [
                 $t->konsumen->nama ?? '-',
                 $t->konsumen->no_hp ?? '-',
                 $t->produk->nama ?? '-',
-                $t->qty,
-                'Rp '.number_format($t->harga_satuan,0,',','.'),
-                'Rp '.number_format($t->total,0,',','.'),
-                $t->status, // ✅ TAMBAH STATUS
-                Carbon::parse($t->tanggal_transaksi)->format('d-m-Y')
+                $t->qty ?? 0,
+                'Rp ' . number_format($t->harga_satuan ?? 0, 0, ',', '.'),
+                'Rp ' . number_format($t->total ?? 0, 0, ',', '.'),
+                $t->status ?? '-',
+                $t->tanggal_transaksi
+                    ? Carbon::parse($t->tanggal_transaksi)->format('d-m-Y')
+                    : '-',
             ];
         });
     }
@@ -86,7 +90,7 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
             'Qty',
             'Harga Satuan',
             'Total',
-            'Status', // ✅ TAMBAH
+            'Status',
             'Tanggal Transaksi'
         ];
     }
@@ -94,43 +98,59 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
     public function styles(Worksheet $sheet)
     {
         return [
-            1 => ['font' => ['bold' => true,'size' => 12]],
+            4 => ['font' => ['bold' => true, 'size' => 12]], // header di baris 4
         ];
     }
 
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event){
-                $sheet = $event->sheet->getDelegate();
-                $sheet->insertNewRowBefore(1,3);
+            AfterSheet::class => function (AfterSheet $event) {
 
-                // Judul
-                $sheet->setCellValue('A1','LAPORAN TRANSAKSI PENJUALAN');
+                $sheet = $event->sheet->getDelegate();
+
+                // Tambah 3 baris di atas
+                $sheet->insertNewRowBefore(1, 3);
+
+                // =====================
+                // JUDUL
+                // =====================
+                $sheet->setCellValue('A1', 'LAPORAN TRANSAKSI PENJUALAN');
                 $sheet->mergeCells('A1:H1');
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
 
-                $sheet->setCellValue('A2','Tanggal Export : '.Carbon::now()->format('d M Y'));
+                // Tanggal export
+                $sheet->setCellValue('A2', 'Tanggal Export : ' . Carbon::now()->format('d M Y'));
                 $sheet->mergeCells('A2:H2');
 
-                // Header style
+                // =====================
+                // STYLE HEADER
+                // =====================
                 $sheet->getStyle('A4:H4')->getFont()->setBold(true);
                 $sheet->getStyle('A4:H4')->getFill()
                     ->setFillType('solid')
                     ->getStartColor()->setARGB('D9E1F2');
 
-                // Border
-                $sheet->getStyle('A4:H'.$sheet->getHighestRow())
+                // =====================
+                // BORDER
+                // =====================
+                $sheet->getStyle('A4:H' . $sheet->getHighestRow())
                     ->getBorders()
                     ->getAllBorders()
                     ->setBorderStyle('thin');
 
-                // Total omzet
+                // =====================
+                // TOTAL OMZET
+                // =====================
                 $lastRow = $sheet->getHighestRow() + 2;
-                $sheet->setCellValue('F'.$lastRow,'TOTAL OMZET');
-                $sheet->setCellValue('G'.$lastRow,'Rp '.number_format($this->totalOmzet,0,',','.'));
-                $sheet->getStyle('F'.$lastRow.':G'.$lastRow)->getFont()->setBold(true);
+
+                $sheet->setCellValue('F' . $lastRow, 'TOTAL OMZET');
+                $sheet->setCellValue('G' . $lastRow, 'Rp ' . number_format($this->totalOmzet, 0, ',', '.'));
+
+                $sheet->getStyle('F' . $lastRow . ':G' . $lastRow)
+                    ->getFont()
+                    ->setBold(true);
             }
         ];
     }

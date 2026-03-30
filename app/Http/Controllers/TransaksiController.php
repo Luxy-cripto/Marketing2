@@ -304,4 +304,10 @@ class TransaksiController extends Controller
             return back()->with('error',$e->getMessage());
         }
     }
+        public function show($id)
+    {
+        $transaksi = Transaksi::with('konsumen', 'produk')->findOrFail($id);
+
+        return view('transaksi.show', compact('transaksi'));
+    }
 }

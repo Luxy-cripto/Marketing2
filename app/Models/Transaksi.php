@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Transaksi extends Model
 {
+    public const STATUS_LUNAS = 'Lunas';
+    public const STATUS_BELUM = 'Belum Bayar';
+
     protected $fillable = [
         'konsumen_id',
         'produk_id',
@@ -16,10 +19,16 @@ class Transaksi extends Model
         'status'
     ];
 
+    // 🔥 TARUH DI SINI
     protected static function booted()
     {
         static::creating(function ($transaksi) {
             $transaksi->total = $transaksi->qty * $transaksi->harga_satuan;
+
+            // default status kalau kosong
+            if (!$transaksi->status) {
+                $transaksi->status = self::STATUS_BELUM;
+            }
         });
 
         static::updating(function ($transaksi) {

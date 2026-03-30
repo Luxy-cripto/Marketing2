@@ -218,34 +218,39 @@
                                 <td>
 
 
-                                    <div class="d-flex gap-2">
+                                  <div class="d-flex gap-2">
 
-                                        <a
-                                            href="{{ route('transaksi.edit',$t->id) }}"
-                                            class="btn btn-outline-warning btn-sm"
-                                        >
-                                            ✏️
-                                        </a>
+                                    <!-- Invoice -->
+                                    <a href="{{ route('transaksi.invoice', $t->id) }}"
+                                    class="btn btn-sm btn-primary"
+                                    title="Invoice">
+                                        📄
+                                    </a>
 
-                                        <form
-                                            action="{{ route('transaksi.destroy',$t->id) }}"
-                                            method="POST"
-                                            onsubmit="return confirm('Yakin hapus?')"
-                                        >
+                                    <!-- Edit -->
+                                    <a href="{{ route('transaksi.edit', $t->id) }}"
+                                    class="btn btn-sm btn-warning"
+                                    title="Edit">
+                                        ✏️
+                                    </a>
 
-                                            @csrf
-                                            @method('DELETE')
+                                    <!-- Delete -->
+                                    <form action="{{ route('transaksi.destroy', $t->id) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('Yakin hapus data ini?')">
 
-                                            <button
-                                                class="btn btn-outline-danger btn-sm"
-                                            >
-                                                🗑
-                                            </button>
+                                        @csrf
+                                        @method('DELETE')
 
-                                        </form>
+                                        <button type="submit"
+                                                class="btn btn-sm btn-danger"
+                                                title="Hapus">
+                                            🗑
+                                        </button>
 
-                                    </div>
+                                    </form>
 
+                                </div>
                                 </td>
                             </tr>
 

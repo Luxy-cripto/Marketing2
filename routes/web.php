@@ -66,7 +66,7 @@ Route::middleware(['auth'])->group(function () {
             return redirect()->route('admin.dashboard');
         }
 
-        if ($user->role === 'marketing/admin') {
+        if ($user->role === 'marketing') {
             return redirect()->route('marketing.dashboard');
         }
 
@@ -117,7 +117,6 @@ Route::middleware(['auth'])->group(function () {
     | RESOURCE ROUTES (FIX: TIDAK DOUBLE)
     |--------------------------------------------------------------------------
     */
-    Route::resource('konsumen', KonsumenController::class)->except(['show']);
 
     Route::resource('followups', FollowUpController::class); // ✅ FIX UTAMA
 
@@ -204,4 +203,14 @@ Route::middleware(['auth'])->group(function () {
         return redirect('/');
     })->name('logout');
 
+    /*
+    |--------------------------------------------------------------------------
+    | teransaki
+    |--------------------------------------------------------------------------
+    */
+    Route::resource('konsumen', KonsumenController::class)
+    ->except(['show'])
+    ->parameters([
+        'konsumen' => 'konsumen'
+    ]);
 });

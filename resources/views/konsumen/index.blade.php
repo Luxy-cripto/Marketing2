@@ -209,30 +209,25 @@
 
                                                                         <div class="d-flex gap-2">
 
-                                                                                <a
-                                                                                        href="{{ route('konsumen.edit',$k->id) }}"
-                                                                                        class="btn btn-warning btn-sm"
-                                                                                >
-                                                                                        Edit
-                                                                                </a>
+                                                                        <!-- EDIT -->
+                                                                        <a href="{{ route('konsumen.edit', $k->id) }}"
+                                                                        class="btn btn-sm btn-warning">
+                                                                            ✏️
+                                                                        </a>
 
-                                                                                <form
-                                                                                        action="{{ route('konsumen.destroy',$k->id) }}"
-                                                                                        method="POST"
-                                                                                        onsubmit="return confirm('Yakin hapus?')"
-                                                                                >
+                                                                        <!-- DELETE -->
+                                                                        <form action="{{ route('konsumen.destroy', $k->id) }}"
+                                                                            method="POST"
+                                                                            onsubmit="return confirm('Yakin hapus?')">
+                                                                            @csrf
+                                                                            @method('DELETE')
 
-                                                                                        @csrf
-                                                                                        @method('DELETE')
+                                                                            <button class="btn btn-sm btn-danger">
+                                                                                🗑
+                                                                            </button>
+                                                                        </form>
 
-                                                                                        <button class="btn btn-danger btn-sm">
-                                                                                                Hapus
-                                                                                        </button>
-
-                                                                                </form>
-
-                                                                        </div>
-
+                                                                    </div>
                                                                 </td>
 
                                                         </tr>
