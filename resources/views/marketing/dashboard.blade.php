@@ -178,7 +178,7 @@
                             <td>{{ $k->no_hp }}</td>
 
                             <td>
-                                {{ $k->produk?->nama ?? '-' }}
+                                {{ $k->transaksis->first()?->produk?->nama ?? '-' }}
                             </td>
 
                             <td>

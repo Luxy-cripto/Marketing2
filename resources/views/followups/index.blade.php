@@ -7,10 +7,6 @@
 <!-- HEADER -->
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="fw-bold">📋 Daftar Follow-Up</h4>
-
-    <a href="{{ route('followups.create') }}" class="btn btn-primary">
-        <i class="fa fa-plus"></i> Tambah Follow-Up
-    </a>
 </div>
 
 @if(session('success'))
@@ -85,7 +81,7 @@
 
 <td>
 
-<a href="{{ route('followups.edit', $f->id) }}"class="btn btn-warning btn-sm">
+<a href="{{ route('followups.edit', $f) }}"class="btn btn-warning btn-sm">
 <i class="fa fa-edit"></i>
 </a>
 

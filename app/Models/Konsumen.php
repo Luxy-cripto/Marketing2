@@ -24,4 +24,6 @@ class Konsumen extends Model
     public function transaksis() {
         return $this->hasMany(Transaksi::class);
     }
+
+    
 }

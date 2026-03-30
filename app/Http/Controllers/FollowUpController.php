@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\FollowUp;
 use App\Models\Konsumen;
+use App\Models\Transaksi; // ✅ TAMBAHAN
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class FollowUpController extends Controller
 {
     // =========================
-    // TAMPILKAN DATA FOLLOW UP
+    // LIST DATA
     // =========================
     public function index()
     {
@@ -28,26 +29,25 @@ class FollowUpController extends Controller
 
 
     // =========================
-    // FORM TAMBAH FOLLOW UP
+    // FORM CREATE
     // =========================
     public function create()
     {
         $konsumens = Konsumen::all();
-
         return view('followups.create', compact('konsumens'));
     }
 
 
     // =========================
-    // SIMPAN FOLLOW UP
+    // STORE
     // =========================
     public function store(Request $request)
     {
         $request->validate([
             'konsumen_id' => 'required|exists:konsumens,id',
-            'status' => 'required|string',
+            'status' => 'required|in:Belum Dihubungi,Belum Bayar,Sudah Bayar',
             'catatan' => 'nullable|string',
-            'follow_up_date' => 'nullable|date_format:Y-m-d\TH:i',
+            'follow_up_date' => 'nullable|date',
         ]);
 
         FollowUp::create([
@@ -64,48 +64,90 @@ class FollowUpController extends Controller
 
 
     // =========================
-    // FORM EDIT FOLLOW UP
+    // FORM EDIT
     // =========================
     public function edit($id)
-{
-    $followUp = FollowUp::findOrFail($id);
-    $konsumens = Konsumen::all();
-
-    return view('followups.edit', compact('followUp','konsumens'));
-}
-
-    // =========================
-    // UPDATE FOLLOW UP
-    // =========================
-   public function update(Request $request, $id)
-{
-    $followUp = FollowUp::findOrFail($id);
-
-    $request->validate([
-        'konsumen_id' => 'required',
-        'status' => 'required',
-        'catatan' => 'nullable',
-        'follow_up_date' => 'nullable'
-    ]);
-
-    $followUp->update([
-        'konsumen_id' => $request->konsumen_id,
-        'status' => $request->status,
-        'catatan' => $request->catatan,
-        'follow_up_date' => $request->follow_up_date
-    ]);
-
-    return redirect()->route('followups.index')
-        ->with('success','Data berhasil diupdate');
-}
-
-
-    // =========================
-    // HAPUS FOLLOW UP
-    // =========================
-    public function destroy(FollowUp $followUp)
     {
         $user = Auth::user();
+
+        $followUp = FollowUp::findOrFail($id);
+
+        // 🔒 SECURITY
+        if(!in_array($user->role, ['admin','marketing']) && $followUp->user_id != $user->id){
+            return redirect()->route('followups.index')
+                ->with('error','Tidak punya akses');
+        }
+
+        $konsumens = Konsumen::all();
+
+        return view('followups.edit', compact('followUp','konsumens'));
+    }
+
+
+    // =========================
+    // UPDATE + AUTO SYNC TRANSAKSI
+    // =========================
+    public function update(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        $followUp = FollowUp::findOrFail($id);
+
+        // 🔒 SECURITY
+        if(!in_array($user->role, ['admin','marketing']) && $followUp->user_id != $user->id){
+            return redirect()->route('followups.index')
+                ->with('error','Tidak punya akses');
+        }
+
+        $request->validate([
+            'konsumen_id' => 'required|exists:konsumens,id',
+            'status' => 'required|in:Belum Dihubungi,Belum Bayar,Sudah Bayar',
+            'catatan' => 'nullable|string',
+            'follow_up_date' => 'nullable|date',
+        ]);
+
+        // ✅ UPDATE FOLLOW UP
+        $followUp->update([
+            'konsumen_id' => $request->konsumen_id,
+            'status' => $request->status,
+            'catatan' => $request->catatan,
+            'follow_up_date' => $request->follow_up_date
+        ]);
+
+        // =========================
+        // 🔥 AUTO UPDATE TRANSAKSI
+        // =========================
+
+        $transaksi = Transaksi::where('konsumen_id', $followUp->konsumen_id)
+            ->latest()
+            ->first();
+
+        if ($transaksi) {
+
+            if ($request->status == 'Sudah Bayar') {
+                $transaksi->status = 'Lunas';
+            }
+
+            if ($request->status == 'Belum Bayar') {
+                $transaksi->status = 'Belum Bayar';
+            }
+
+            $transaksi->save();
+        }
+
+        return redirect()->route('followups.index')
+            ->with('success','Data berhasil diupdate & transaksi ikut diperbarui');
+    }
+
+
+    // =========================
+    // DELETE
+    // =========================
+    public function destroy($id)
+    {
+        $user = Auth::user();
+
+        $followUp = FollowUp::findOrFail($id);
 
         if(!in_array($user->role, ['admin','marketing']) && $followUp->user_id != $user->id){
             return redirect()->route('followups.index')

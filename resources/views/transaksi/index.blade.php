@@ -51,30 +51,20 @@
 
 
         <div class="col-md-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-
-                    <h6 class="text-muted">Total Omzet</h6>
-
-                    <h3 id="totalOmzet">
-                        Rp {{ number_format($transaksis->sum('total'),0,',','.') }}
-                    </h3>
-
-                </div>
-            </div>
+            <div class="card">
+            <div class="card-body">
+             <small>Total Omzet</small>
+            <h4>Rp {{ number_format($totalOmzet,0,',','.') }}</h4>
         </div>
+    </div>
+     </div>
 
 
         <div class="col-md-4">
-            <div class="card shadow-sm border-0">
+             <div class="card">
                 <div class="card-body">
-
-                    <h6 class="text-muted">Produk Terjual</h6>
-
-                    <h3>
-                        {{ $transaksis->sum('qty') }}
-                    </h3>
-
+                    <small>Produk Terjual</small>
+                    <h4>{{ $totalProduk }}</h4>
                 </div>
             </div>
         </div>
@@ -216,11 +206,14 @@
                                 </td>
 
                                 <td>
-                                    <span class="badge
-                                        {{ $t->status=='Deal'?'bg-success':($t->status=='Follow-Up'?'bg-warning':'bg-secondary') }}">
-                                        {{ $t->status }}
-                                    </span>
-                                </td>
+                                @if($t->status == 'Lunas')
+                                    <span class="badge bg-success">Lunas</span>
+                                @elseif($t->status == 'Belum Bayar')
+                                    <span class="badge bg-warning text-dark">Belum Bayar</span>
+                                @else
+                                    <span class="badge bg-secondary">{{ $t->status }}</span>
+                                @endif
+                            </td>
 
                                 <td>
 

@@ -67,6 +67,15 @@
 
                 <!-- Konsumen (admin & marketing) -->
 
+                @if(auth()->user()->role == 'admin' || auth()->user()->role == 'marketing')
+                    <li class="nav-item">
+                        <a href="{{ route('marketing.dashboard') }}">
+                            <i class="fas fa-user-friends"></i>
+                            <p>dashboard marketing</p>
+                        </a>
+                    </li>
+                @endif
+
                 <li class="nav-item">
                     <a href="{{ route('konsumen.index') }}">
                         <i class="fas fa-user-friends"></i>

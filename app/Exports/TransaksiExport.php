@@ -32,7 +32,7 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
     {
         $query = Transaksi::with(['konsumen','produk']);
 
-        // Filter search nama konsumen / produk
+        // 🔍 SEARCH
         if($this->search){
             $query->where(function($q){
                 $q->whereHas('konsumen', function($k){
@@ -44,12 +44,12 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
             });
         }
 
-        // Filter produk
+        // 📦 FILTER PRODUK
         if($this->produkId){
             $query->where('produk_id', $this->produkId);
         }
 
-        // Filter tanggal range
+        // 📅 FILTER TANGGAL
         if($this->start && $this->end){
             $query->whereBetween('tanggal_transaksi', [$this->start, $this->end]);
         } elseif($this->start){
@@ -60,7 +60,8 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
 
         $data = $query->get();
 
-        $this->totalOmzet = $data->sum('total');
+        // 🔥 FIX OMZET (HANYA SUDAH BAYAR)
+        $this->totalOmzet = $data->where('status','Sudah Bayar')->sum('total');
 
         return $data->map(function($t){
             return [
@@ -70,6 +71,7 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
                 $t->qty,
                 'Rp '.number_format($t->harga_satuan,0,',','.'),
                 'Rp '.number_format($t->total,0,',','.'),
+                $t->status, // ✅ TAMBAH STATUS
                 Carbon::parse($t->tanggal_transaksi)->format('d-m-Y')
             ];
         });
@@ -84,6 +86,7 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
             'Qty',
             'Harga Satuan',
             'Total',
+            'Status', // ✅ TAMBAH
             'Tanggal Transaksi'
         ];
     }
@@ -104,30 +107,30 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
 
                 // Judul
                 $sheet->setCellValue('A1','LAPORAN TRANSAKSI PENJUALAN');
-                $sheet->mergeCells('A1:G1');
+                $sheet->mergeCells('A1:H1');
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
 
                 $sheet->setCellValue('A2','Tanggal Export : '.Carbon::now()->format('d M Y'));
-                $sheet->mergeCells('A2:G2');
+                $sheet->mergeCells('A2:H2');
 
                 // Header style
-                $sheet->getStyle('A4:G4')->getFont()->setBold(true);
-                $sheet->getStyle('A4:G4')->getFill()
+                $sheet->getStyle('A4:H4')->getFont()->setBold(true);
+                $sheet->getStyle('A4:H4')->getFill()
                     ->setFillType('solid')
                     ->getStartColor()->setARGB('D9E1F2');
 
-                // Border table
-                $sheet->getStyle('A4:G'.$sheet->getHighestRow())
+                // Border
+                $sheet->getStyle('A4:H'.$sheet->getHighestRow())
                     ->getBorders()
                     ->getAllBorders()
                     ->setBorderStyle('thin');
 
                 // Total omzet
                 $lastRow = $sheet->getHighestRow() + 2;
-                $sheet->setCellValue('E'.$lastRow,'TOTAL OMZET');
-                $sheet->setCellValue('F'.$lastRow,'Rp '.number_format($this->totalOmzet,0,',','.'));
-                $sheet->getStyle('E'.$lastRow.':F'.$lastRow)->getFont()->setBold(true);
+                $sheet->setCellValue('F'.$lastRow,'TOTAL OMZET');
+                $sheet->setCellValue('G'.$lastRow,'Rp '.number_format($this->totalOmzet,0,',','.'));
+                $sheet->getStyle('F'.$lastRow.':G'.$lastRow)->getFont()->setBold(true);
             }
         ];
     }

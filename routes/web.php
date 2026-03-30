@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Marketing\DashboardController as MarketingDashboard;
 use App\Http\Controllers\KonsumenController;
@@ -10,16 +11,15 @@ use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\TargetController;
 use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\UserController;
+
 use App\Exports\KonsumenExport;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\KonsumenImport;
 
 /*
 |--------------------------------------------------------------------------
 | HALAMAN LOGIN
 |--------------------------------------------------------------------------
 */
-
 Route::get('/', function () {
     return view('auth.login');
 });
@@ -29,7 +29,6 @@ Route::get('/', function () {
 | AUTH ROUTES
 |--------------------------------------------------------------------------
 */
-
 Auth::routes([
     'register' => false,
     'reset' => false,
@@ -37,10 +36,9 @@ Auth::routes([
 
 /*
 |--------------------------------------------------------------------------
-| REGISTER (jika ingin admin buat user)
+| REGISTER (OPSIONAL ADMIN)
 |--------------------------------------------------------------------------
 */
-
 Route::get('/register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, 'register']);
 
@@ -49,7 +47,6 @@ Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, '
 | SEMUA ROUTE WAJIB LOGIN
 |--------------------------------------------------------------------------
 */
-
 Route::middleware(['auth'])->group(function () {
 
     /*
@@ -57,7 +54,6 @@ Route::middleware(['auth'])->group(function () {
     | REDIRECT SETELAH LOGIN
     |--------------------------------------------------------------------------
     */
-
     Route::get('/home', function () {
 
         $user = auth()->user();
@@ -70,7 +66,7 @@ Route::middleware(['auth'])->group(function () {
             return redirect()->route('admin.dashboard');
         }
 
-        if ($user->role === 'marketing') {
+        if ($user->role === 'marketing/admin') {
             return redirect()->route('marketing.dashboard');
         }
 
@@ -84,7 +80,6 @@ Route::middleware(['auth'])->group(function () {
     | DASHBOARD
     |--------------------------------------------------------------------------
     */
-
     Route::get('/admin/dashboard', [AdminDashboard::class, 'index'])
         ->middleware('role:admin')
         ->name('admin.dashboard');
@@ -94,12 +89,13 @@ Route::middleware(['auth'])->group(function () {
         ->name('marketing.dashboard');
 
 
+
+
     /*
     |--------------------------------------------------------------------------
     | LIVE SEARCH
     |--------------------------------------------------------------------------
     */
-
     Route::get('/konsumen/live-search', [KonsumenController::class, 'liveSearch'])
         ->name('konsumen.liveSearch');
 
@@ -109,25 +105,21 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | FOLLOW UP KHUSUS MARKETING
+    | FOLLOW UP KHUSUS
     |--------------------------------------------------------------------------
     */
-
     Route::get('/marketing/followups/today', [FollowUpController::class, 'today'])
         ->name('marketing.followups.today');
 
 
     /*
     |--------------------------------------------------------------------------
-    | RESOURCE ROUTES
+    | RESOURCE ROUTES (FIX: TIDAK DOUBLE)
     |--------------------------------------------------------------------------
     */
+    Route::resource('konsumen', KonsumenController::class)->except(['show']);
 
-    Route::resource('konsumen', KonsumenController::class)
-    ->parameters(['konsumen' => 'konsumen'])
-    ->except(['show']);
-
-    Route::resource('followups', FollowUpController::class)->except(['show']);
+    Route::resource('followups', FollowUpController::class); // ✅ FIX UTAMA
 
     Route::resource('produk', ProdukController::class);
 
@@ -136,14 +128,11 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | USERS (HANYA ADMIN)
+    | USERS (ADMIN ONLY)
     |--------------------------------------------------------------------------
     */
-
     Route::middleware('role:admin')->group(function () {
-
         Route::resource('users', UserController::class);
-
     });
 
 
@@ -152,17 +141,15 @@ Route::middleware(['auth'])->group(function () {
     | EXPORT EXCEL
     |--------------------------------------------------------------------------
     */
-
     Route::get('/export-konsumen', function () {
-
         $status = request('status');
 
         return Excel::download(
             new KonsumenExport($status),
             'konsumen.xlsx'
         );
-
     })->name('konsumen.export');
+
 
     /*
     |--------------------------------------------------------------------------
@@ -172,14 +159,39 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/import-konsumen', [KonsumenController::class, 'import'])
         ->name('konsumen.import');
 
+
     /*
     |--------------------------------------------------------------------------
     | AJAX DASHBOARD MARKETING
     |--------------------------------------------------------------------------
     */
-
     Route::get('/marketing/followups-today', [MarketingDashboard::class, 'followupsToday'])
         ->name('marketing.followupsToday');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TRANSAKSI
+    |--------------------------------------------------------------------------
+    */
+    Route::resource('transaksi', TransaksiController::class);
+
+    Route::get('/transaksi-success/{id}', function ($id) {
+        $transaksi = \App\Models\Transaksi::findOrFail($id);
+        return view('transaksi.success', compact('transaksi'));
+    })->name('transaksi.success');
+
+    Route::get('/transaksi-invoice/{id}', [TransaksiController::class,'invoice'])
+        ->name('transaksi.invoice');
+
+    Route::get('/export-transaksi', [TransaksiController::class,'exportTransaksi'])
+        ->name('export.transaksi');
+
+    Route::get('/export-produk-terlaris', [TransaksiController::class,'exportProdukTerlaris'])
+        ->name('export.produk.terlaris');
+
+    Route::post('/transaksi/{transaksi}/bayar', [TransaksiController::class, 'bayar'])
+        ->name('transaksi.bayar');
 
 
     /*
@@ -187,36 +199,9 @@ Route::middleware(['auth'])->group(function () {
     | LOGOUT
     |--------------------------------------------------------------------------
     */
-
     Route::post('/logout', function () {
-
         Auth::logout();
-
         return redirect('/');
-
     })->name('logout');
-
-    /*
-    |--------------------------------------------------------------------------
-    | teransaksi
-    |--------------------------------------------------------------------------
-    */
-    Route::resource('transaksi', TransaksiController::class);
-    Route::get('/transaksi-success/{id}', function ($id) {
-    $transaksi = \App\Models\Transaksi::findOrFail($id);
-    return view('transaksi.success', compact('transaksi'));
-    })->name('transaksi.success');
-
-    Route::get('/transaksi-invoice/{id}', [TransaksiController::class,'invoice'])->name('transaksi.invoice');
-    Route::get('/export-transaksi', [TransaksiController::class,'exportTransaksi'])
-    ->name('export.transaksi');
-
-    Route::get('/export-produk-terlaris', [TransaksiController::class,'exportProdukTerlaris'])
-    ->name('export.produk.terlaris');
-    Route::post('/transaksi/{transaksi}/bayar', [TransaksiController::class, 'bayar'])
-    ->name('transaksi.bayar');
-
-    Route::get('followups/{followup}/show', [FollowUpController::class, 'show'])->name('followups.show');
-    Route::resource('followups', FollowUpController::class);
 
 });
