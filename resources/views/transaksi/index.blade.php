@@ -117,6 +117,7 @@
                             <th>Total</th>
                             <th>Tanggal</th>
                             <th>Status</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
 
@@ -144,6 +145,15 @@
                                     <span class="badge bg-warning text-dark">Belum Bayar</span>
                                 @endif
                             </td>
+
+                            <td>
+                                <div class="d-flex gap-2"> <!-- Invoice -->
+                                    <a href="{{ route('transaksi.invoice', $t->id) }}" class="btn btn-sm btn-primary" title="Invoice"> 📄 </a>
+                                    <!-- Edit -->
+                                    <a href="{{ route('transaksi.edit', $t->id) }}" class="btn btn-sm btn-warning" title="Edit"> ✏️ </a>
+                                    <!-- Delete -->
+                                    <form action="{{ route('transaksi.destroy', $t->id) }}" method="POST" onsubmit="return confirm('Yakin hapus data ini?')"> @csrf @method('DELETE')
+                                         <button type="submit" class="btn btn-sm btn-danger" title="Hapus"> 🗑 </button> </form> </div> </td>
 
                         </tr>
                         @endforeach
