@@ -38,7 +38,12 @@ class TransaksiController extends Controller
     public function exportTransaksi(Request $request)
     {
         return Excel::download(
-            new TransaksiExport($request->search, $request->tanggal),
+            new TransaksiExport(
+                $request->search,
+                $request->produk_id,
+                $request->start_date,
+                $request->end_date
+            ),
             'laporan_transaksi.xlsx'
         );
     }

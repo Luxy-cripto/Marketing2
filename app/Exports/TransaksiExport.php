@@ -35,12 +35,10 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
         // 🔍 SEARCH
         if ($this->search) {
             $query->where(function ($q) {
-                $q->whereHas('konsumen', function ($k) {
-                    $k->where('nama', 'like', '%' . $this->search . '%');
-                })
-                ->orWhereHas('produk', function ($p) {
-                    $p->where('nama', 'like', '%' . $this->search . '%');
-                });
+                $q->whereHas('konsumen', fn($k) =>
+                    $k->where('nama', 'like', '%' . $this->search . '%'))
+                ->orWhereHas('produk', fn($p) =>
+                    $p->where('nama', 'like', '%' . $this->search . '%'));
             });
         }
 
@@ -49,20 +47,31 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
             $query->where('produk_id', $this->produkId);
         }
 
-        // 📅 FILTER TANGGAL
+        // 📅 FILTER TANGGAL (FIX TOTAL 🔥)
         if ($this->start && $this->end) {
-            $query->whereBetween('tanggal_transaksi', [$this->start, $this->end]);
+            $query->whereBetween('tanggal_transaksi', [
+                $this->start . ' 00:00:00',
+                $this->end . ' 23:59:59'
+            ]);
         } elseif ($this->start) {
-            $query->whereDate('tanggal_transaksi', '>=', $this->start);
+            $query->whereBetween('tanggal_transaksi', [
+                $this->start . ' 00:00:00',
+                $this->start . ' 23:59:59'
+            ]);
         } elseif ($this->end) {
-            $query->whereDate('tanggal_transaksi', '<=', $this->end);
+            $query->whereBetween('tanggal_transaksi', [
+                $this->end . ' 00:00:00',
+                $this->end . ' 23:59:59'
+            ]);
         }
 
         $data = $query->get();
 
-        // 🔥 FIX OMZET (SUPPORT MULTI STATUS BIAR AMAN)
+        // 💰 HITUNG OMZET (AMAN SEMUA STATUS)
         $this->totalOmzet = $data
-            ->whereIn('status', ['Lunas', 'Sudah Bayar'])
+            ->filter(function ($t) {
+                return strtolower($t->status) === 'lunas';
+            })
             ->sum('total');
 
         return $data->map(function ($t) {
@@ -98,7 +107,7 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
     public function styles(Worksheet $sheet)
     {
         return [
-            4 => ['font' => ['bold' => true, 'size' => 12]], // header di baris 4
+            4 => ['font' => ['bold' => true, 'size' => 12]],
         ];
     }
 
@@ -109,7 +118,7 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
 
                 $sheet = $event->sheet->getDelegate();
 
-                // Tambah 3 baris di atas
+                // Tambah 3 baris atas
                 $sheet->insertNewRowBefore(1, 3);
 
                 // =====================
@@ -120,7 +129,7 @@ class TransaksiExport implements FromCollection, WithHeadings, ShouldAutoSize, W
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
 
-                // Tanggal export
+                // TANGGAL EXPORT
                 $sheet->setCellValue('A2', 'Tanggal Export : ' . Carbon::now()->format('d M Y'));
                 $sheet->mergeCells('A2:H2');
 
