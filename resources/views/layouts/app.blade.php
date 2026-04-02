@@ -24,12 +24,21 @@
         body, html {
             height: 100%;
             font-family: 'Nunito', sans-serif;
-            background: linear-gradient(135deg, #4A90E2, #9013FE);
+            background: linear-gradient(135deg, #4ea0ff, #d8d5db);
+            background-size: cover;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-position: center center;
+            overflow: hidden;
+
         }
 
         .navbar {
-            background: rgba(255,255,255,0.9);
+            background: linear-gradient(135deg, #4ea0ff, #d8d5db);
             backdrop-filter: blur(6px);
+            border-bottom: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+
         }
 
         main {
@@ -47,7 +56,7 @@
 
         .btn-gradient {
             border-radius: 50px;
-            background: linear-gradient(90deg, #4A90E2, #9013FE);
+            background: linear-gradient(90deg, #4ea0ff, #d8d5db);
             color: white;
             transition: 0.3s;
         }
@@ -88,23 +97,6 @@
                 <ul class="navbar-nav ms-auto">
 
                     @guest
-
-                        @if (Route::has('login'))
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('login') }}">
-                                    Login
-                                </a>
-                            </li>
-                        @endif
-
-                        @if (Route::has('register'))
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('register') }}">
-                                    Register
-                                </a>
-                            </li>
-                        @endif
-
                     @else
 
                         <li class="nav-item dropdown">

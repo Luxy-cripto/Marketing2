@@ -1,105 +1,241 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid min-vh-100 d-flex justify-content-center align-items-center"
-     style="background: linear-gradient(135deg, #4A90E2, #9013FE);">
+<div class="login-wrapper">
 
-    <div class="card p-4 shadow-lg"
-         style="border-radius: 20px; max-width: 400px; width: 90%; background: rgba(255,255,255,0.95); animation: fadeIn 0.8s;">
+    <div class="login-box">
 
-        <!-- Logo & Title -->
-        <div class="text-center mb-4">
-            <img src="{{ asset('logo.png') }}" alt="Logo" style="width: 100px; margin-bottom: 10px;">
-            <h3 class="fw-bold">Register</h3>
+        <!-- LEFT -->
+        <div class="left-panel">
+            <div class="left-content">
+                <img src="{{ asset('assets/img/kaiadmin/logo.png') }}" class="logo">
+
+                <h3>Join With Us 🚀</h3>
+                <p>
+                    Create your account and start<br>
+                    your journey with us today
+                </p>
+
+                <a href="{{ route('login') }}" class="signup-link">
+                    Already have account? Login
+                </a>
+            </div>
         </div>
 
-        <!-- Form -->
-        <form method="POST" action="{{ route('register') }}">
-            @csrf
+        <!-- RIGHT -->
+        <div class="right-panel">
 
-            <!-- Name -->
-            <div class="input-group mb-3">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="fas fa-user"></i>
-                </span>
-                <input id="name" type="text" class="form-control border-start-0 @error('name') is-invalid @enderror"
-                       name="name" value="{{ old('name') }}" required autocomplete="name" autofocus
-                       placeholder="Full Name">
-                @error('name')
-                    <span class="invalid-feedback"><strong>{{ $message }}</strong></span>
-                @enderror
+            <div class="form-box">
+
+                <div class="text-center mb-4">
+                    <div class="icon-user">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h5>REGISTER</h5>
+                </div>
+
+                <form method="POST" action="{{ route('register') }}">
+                    @csrf
+
+                    <input type="text" name="name"
+                        placeholder="Full Name"
+                        class="form-control mb-3" required>
+
+                    <input type="email" name="email"
+                        placeholder="Email"
+                        class="form-control mb-3" required>
+
+                    <input type="password" name="password"
+                        placeholder="Password"
+                        class="form-control mb-3" required>
+
+                    <input type="password" name="password_confirmation"
+                        placeholder="Confirm Password"
+                        class="form-control mb-3" required>
+
+                    <button class="btn-login">Register</button>
+
+                </form>
+
             </div>
 
-            <!-- Email -->
-            <div class="input-group mb-3">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="fas fa-envelope"></i>
-                </span>
-                <input id="email" type="email" class="form-control border-start-0 @error('email') is-invalid @enderror"
-                       name="email" value="{{ old('email') }}" required autocomplete="email"
-                       placeholder="Email Address">
-                @error('email')
-                    <span class="invalid-feedback"><strong>{{ $message }}</strong></span>
-                @enderror
-            </div>
+        </div>
 
-            <!-- Password -->
-            <div class="input-group mb-3">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="fas fa-lock"></i>
-                </span>
-                <input id="password" type="password" class="form-control border-start-0 @error('password') is-invalid @enderror"
-                       name="password" required autocomplete="new-password"
-                       placeholder="Password">
-                @error('password')
-                    <span class="invalid-feedback"><strong>{{ $message }}</strong></span>
-                @enderror
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="input-group mb-4">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="fas fa-lock"></i>
-                </span>
-                <input id="password-confirm" type="password" class="form-control border-start-0"
-                       name="password_confirmation" required placeholder="Confirm Password">
-            </div>
-
-            <!-- Submit Button -->
-            <div class="d-grid mb-3">
-                <button type="submit" class="btn btn-gradient btn-lg fw-bold">
-                    Register
-                </button>
-            </div>
-
-            <!-- Already have account -->
-            <div class="text-center">
-                <button type="button" class="btn btn-link" onclick="window.location.href='{{ route('login') }}'">
-                    Already have an account? Login
-                </button>
-            </div>
-        </form>
     </div>
+
 </div>
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 <style>
-/* Fade-in animation for the card */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+
+/* BACKGROUND */
+.login-wrapper{
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 }
 
-/* Gradient button */
-.btn-gradient {
-    border-radius: 50px;
-    background: linear-gradient(90deg, #4A90E2, #9013FE);
-    color: white;
-    transition: 0.3s;
+/* BOX */
+.login-box{
+    width:850px;
+    height:420px;
+    background:white;
+    border-radius:10px;
+    display:flex;
+    overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,0.3);
+
+    animation:fadeSlide 0.8s ease;
 }
 
-.btn-gradient:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+/* LEFT */
+.left-panel{
+    width:50%;
+    background: linear-gradient(135deg, #4ea0ff, #8fa8c9);
+    color:white;
+
+    clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);
+
+    display:flex;
+    align-items:center;
+
+    animation:slideLeft 1s ease;
 }
+
+/* CONTENT */
+.left-content{
+    padding:40px;
+}
+
+/* LOGO */
+.logo{
+    width:60px;
+    margin-bottom:20px;
+
+    animation:float 3s ease-in-out infinite;
+}
+
+/* LINK */
+.signup-link{
+    display:inline-block;
+    margin-top:20px;
+    color:white;
+    font-size:13px;
+    text-decoration:none;
+    transition:0.3s;
+}
+
+.signup-link:hover{
+    opacity:0.8;
+}
+
+/* RIGHT */
+.right-panel{
+    width:50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:white;
+
+    animation:fadeIn 1.2s ease;
+}
+
+/* FORM */
+.form-box{
+    width:70%;
+}
+
+/* INPUT */
+.form-control{
+    width:100%;
+    padding:10px;
+    border:1px solid #ddd;
+    border-radius:5px;
+    transition:0.3s;
+}
+
+/* FOCUS EFFECT */
+.form-control:focus{
+    border-color:#4ea0ff;
+    box-shadow:0 0 8px rgba(78,160,255,0.4);
+    transform:scale(1.02);
+}
+
+/* BUTTON */
+.btn-login{
+    width:100%;
+    padding:10px;
+    border:none;
+    border-radius:5px;
+    background:#5f9cff;
+    color:white;
+    transition:0.3s;
+}
+
+/* HOVER */
+.btn-login:hover{
+    transform:translateY(-3px);
+    box-shadow:0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* CLICK */
+.btn-login:active{
+    transform:scale(0.97);
+}
+
+/* ICON */
+.icon-user{
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    background:#eee;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin:auto;
+    margin-bottom:10px;
+    color:#5f9cff;
+
+    animation:fadeIn 1.5s ease;
+}
+
+/* ================= */
+/* ANIMATIONS */
+/* ================= */
+
+@keyframes fadeSlide{
+    from{
+        opacity:0;
+        transform:translateY(30px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+@keyframes slideLeft{
+    from{
+        transform:translateX(-50px);
+        opacity:0;
+    }
+    to{
+        transform:translateX(0);
+        opacity:1;
+    }
+}
+
+@keyframes fadeIn{
+    from{ opacity:0; }
+    to{ opacity:1; }
+}
+
+@keyframes float{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-8px); }
+}
+
 </style>
 @endsection

@@ -17,132 +17,120 @@ class DashboardController extends Controller
         $user = Auth::user();
         $isAdmin = $user->role === 'admin';
 
-        // =========================
-        // FILTER BULAN & TAHUN
-        // =========================
         $bulan = $request->bulan ?? now()->month;
         $tahun = $request->tahun ?? now()->year;
 
         // =========================
-        // TARGET
+        // TARGET (ANTI KOSONG)
         // =========================
-        $target = Target::when(!$isAdmin, function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
+        $target = Target::when(!$isAdmin, fn($q) => $q->where('user_id', $user->id))
             ->whereMonth('created_at', $bulan)
             ->whereYear('created_at', $tahun)
             ->first();
+
+        if (!$target) {
+            $target = Target::when(!$isAdmin, fn($q) => $q->where('user_id', $user->id))
+                ->latest()
+                ->first();
+        }
 
         $targetLead  = $target->target_lead ?? 0;
         $targetOmset = $target->target_omset ?? 0;
 
         // =========================
-        // LEAD MASUK
+        // LEAD MASUK (ANTI 0 🔥)
         // =========================
-        $totalLead = Konsumen::when(!$isAdmin, function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
+        $totalLead = Konsumen::when(!$isAdmin, fn($q) => $q->where('user_id', $user->id))
             ->whereMonth('created_at', $bulan)
             ->whereYear('created_at', $tahun)
             ->count();
 
+        // fallback kalau bulan ini kosong
+        if ($totalLead == 0) {
+            $totalLead = Konsumen::when(!$isAdmin, fn($q) => $q->where('user_id', $user->id))
+                ->count();
+        }
+
         // =========================
-        // DEAL (status konsumen)
+        // DEAL
         // =========================
-        $deal = Konsumen::when(!$isAdmin, function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
-            ->where('status', 'Deal')
+        $deal = Konsumen::when(!$isAdmin, fn($q) => $q->where('user_id', $user->id))
+            ->whereRaw('LOWER(status) = ?', ['deal'])
             ->count();
 
         // =========================
         // TIDAK TERTARIK
         // =========================
-        $tidakTertarik = Konsumen::when(!$isAdmin, function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
-            ->where('status', 'Tidak Tertarik')
+        $tidakTertarik = Konsumen::when(!$isAdmin, fn($q) => $q->where('user_id', $user->id))
+            ->whereRaw('LOWER(status) = ?', ['tidak tertarik'])
             ->count();
 
         // =========================
-        // 🔥 CLOSING (FIX TOTAL SEMUA)
+        // BASE TRANSAKSI
         // =========================
-        $closing = Transaksi::when(!$isAdmin, function ($q) use ($user) {
-                $q->whereHas('konsumen', function ($qq) use ($user) {
-                    $qq->where('user_id', $user->id);
-                });
-            })
-            ->where('status', 'Lunas')
-            ->count();
+        $transaksiQuery = Transaksi::when(!$isAdmin, function ($q) use ($user) {
+            $q->whereHas('konsumen', fn($qq) => $qq->where('user_id', $user->id));
+        });
 
         // =========================
-        // OMSET (HANYA LUNAS)
+        // CLOSING & OMSET
         // =========================
-        $totalOmset = Transaksi::when(!$isAdmin, function ($q) use ($user) {
-                $q->whereHas('konsumen', function ($qq) use ($user) {
-                    $qq->where('user_id', $user->id);
-                });
-            })
-            ->where('status', 'Lunas')
+        $closing = (clone $transaksiQuery)
+            ->whereRaw('LOWER(status) = ?', ['lunas'])
+            ->count();
+
+        $totalOmset = (clone $transaksiQuery)
+            ->whereRaw('LOWER(status) = ?', ['lunas'])
             ->sum('total');
 
         // =========================
-        // 🔥 LUNAS (JUMLAH + TOTAL)
+        // LUNAS
         // =========================
-        $jumlahLunas = Transaksi::when(!$isAdmin, function ($q) use ($user) {
-                $q->whereHas('konsumen', function ($qq) use ($user) {
-                    $qq->where('user_id', $user->id);
-                });
-            })
-            ->where('status', 'Lunas')
+        $jumlahLunas = (clone $transaksiQuery)
+            ->whereRaw('LOWER(status) = ?', ['lunas'])
             ->count();
 
-        $totalLunas = Transaksi::when(!$isAdmin, function ($q) use ($user) {
-                $q->whereHas('konsumen', function ($qq) use ($user) {
-                    $qq->where('user_id', $user->id);
-                });
-            })
-            ->where('status', 'Lunas')
+        $totalLunas = (clone $transaksiQuery)
+            ->whereRaw('LOWER(status) = ?', ['lunas'])
             ->sum('total');
 
         // =========================
-        // 🔥 BELUM BAYAR
+        // BELUM BAYAR
         // =========================
-        $jumlahBelumBayar = Transaksi::when(!$isAdmin, function ($q) use ($user) {
-                $q->whereHas('konsumen', function ($qq) use ($user) {
-                    $qq->where('user_id', $user->id);
-                });
-            })
-            ->where('status', 'Belum Bayar')
+        $jumlahBelumBayar = (clone $transaksiQuery)
+            ->whereRaw('LOWER(status) = ?', ['belum bayar'])
             ->count();
 
-        $totalBelumBayar = Transaksi::when(!$isAdmin, function ($q) use ($user) {
-                $q->whereHas('konsumen', function ($qq) use ($user) {
-                    $qq->where('user_id', $user->id);
-                });
-            })
-            ->where('status', 'Belum Bayar')
+        $totalBelumBayar = (clone $transaksiQuery)
+            ->whereRaw('LOWER(status) = ?', ['belum bayar'])
             ->sum('total');
 
         // =========================
-        // PROGRESS TARGET OMSET
+        // PROGRESS
         // =========================
         $progress = ($targetOmset > 0)
             ? min(($totalOmset / $targetOmset) * 100, 100)
             : 0;
 
         // =========================
-        // KPI MARKETING
+        // KPI (ANTI KOSONG)
         // =========================
-        $kpi = Konsumen::selectRaw('user_id, count(*) as total')
-            ->whereMonth('created_at', $bulan)
-            ->whereYear('created_at', $tahun)
-            ->groupBy('user_id')
-            ->with('user')
-            ->get();
+        if ($isAdmin) {
+            $kpi = Konsumen::selectRaw('user_id, count(*) as total')
+                ->groupBy('user_id')
+                ->with('user')
+                ->get();
+        } else {
+            $kpi = collect([
+                (object)[
+                    'user' => $user,
+                    'total' => Konsumen::where('user_id', $user->id)->count()
+                ]
+            ]);
+        }
 
         // =========================
-        // FOLLOW UP HARI INI
+        // FOLLOW UP
         // =========================
         $followups = FollowUp::with('konsumen')
             ->when(!$isAdmin, fn($q) => $q->where('user_id', $user->id))
@@ -150,19 +138,19 @@ class DashboardController extends Controller
             ->get();
 
         // =========================
-        // LIST SUDAH BAYAR
+        // SUDAH BAYAR
         // =========================
         $sudahBayar = Konsumen::when(!$isAdmin, fn($q) => $q->where('user_id', $user->id))
-            ->whereHas('transaksis', fn($q) => $q->where('status', 'Lunas'))
-            ->with(['transaksis' => fn($q) => $q->where('status', 'Lunas')->with('produk')])
+            ->whereHas('transaksis', fn($q) => $q->whereRaw('LOWER(status) = ?', ['lunas']))
+            ->with(['transaksis' => fn($q) => $q->whereRaw('LOWER(status) = ?', ['lunas'])->with('produk')])
             ->get();
 
         // =========================
-        // LIST BELUM BAYAR
+        // BELUM BAYAR
         // =========================
         $belumBayar = Konsumen::when(!$isAdmin, fn($q) => $q->where('user_id', $user->id))
-            ->whereHas('transaksis', fn($q) => $q->where('status', 'Belum Bayar'))
-            ->with(['transaksis' => fn($q) => $q->where('status', 'Belum Bayar')->with('produk')])
+            ->whereHas('transaksis', fn($q) => $q->whereRaw('LOWER(status) = ?', ['belum bayar']))
+            ->with(['transaksis' => fn($q) => $q->whereRaw('LOWER(status) = ?', ['belum bayar'])->with('produk')])
             ->get();
 
         return view('marketing.dashboard', compact(
@@ -179,13 +167,10 @@ class DashboardController extends Controller
             'followups',
             'sudahBayar',
             'belumBayar',
-
-            // DATA TAMBAHAN
             'jumlahLunas',
             'totalLunas',
             'jumlahBelumBayar',
             'totalBelumBayar',
-
             'bulan',
             'tahun'
         ));

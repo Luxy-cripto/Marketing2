@@ -1,11 +1,11 @@
 <!-- Sidebar -->
-<div class="sidebar" data-background-color="dark">
+<div class="sidebar custom-sidebar">
 
     <!-- Logo -->
     <div class="sidebar-logo">
-        <div class="logo-header" data-background-color="dark">
+        <div class="logo-header">
             <a href="{{ auth()->user()->role == 'admin' ? route('admin.dashboard') : route('marketing.dashboard') }}" class="logo">
-                <img src="{{ asset('assets/img/kaiadmin/logo_light.svg') }}" class="navbar-brand" height="20">
+                <img src="{{ asset('assets/img/kaiadmin/file1.png') }}" class="navbar-brand" height="60" alt="Logo" />
             </a>
 
             <!-- Toggle Buttons -->
@@ -29,17 +29,28 @@
         <div class="sidebar-content">
 
             <ul class="nav nav-secondary">
-
-                @if(auth()->user()->role == 'admin')
-                    <!-- Dashboard Admin -->
+                @if (auth()->user()->role == 'admin')
+                    <!-- Dashboard -->
                     <li class="nav-item">
                         <a href="{{ route('admin.dashboard') }}">
-                            <i class="fas fa-home"></i>
-                            <p>Dashboard Admin</p>
+                            <i class="fas fa-tachometer-alt"></i>
+                            <p>Dashboard</p>
                         </a>
                     </li>
 
+                @endif
+                
+                 @if(auth()->user()->role == 'admin' || auth()->user()->role == 'marketing')
+                    <!-- Dashboard Marketing -->
+                    <li class="nav-item">
+                        <a href="{{ route('marketing.dashboard') }}">
+                            <i class="fas fa-chart-line"></i>
+                            <p>Dashboard Marketing</p>
+                        </a>
+                    </li>
+                @endif
 
+                @if(auth()->user()->role == 'admin')
                     <!-- User -->
                     <li class="nav-item">
                         <a href="{{ route('users.index') }}">
@@ -65,17 +76,7 @@
                     </li>
                 @endif
 
-                <!-- Konsumen (admin & marketing) -->
-
-                @if(auth()->user()->role == 'admin' || auth()->user()->role == 'marketing')
-                    <li class="nav-item">
-                        <a href="{{ route('marketing.dashboard') }}">
-                            <i class="fas fa-user-friends"></i>
-                            <p>dashboard marketing</p>
-                        </a>
-                    </li>
-                @endif
-
+                <!-- Konsumen -->
                 <li class="nav-item">
                     <a href="{{ route('konsumen.index') }}">
                         <i class="fas fa-user-friends"></i>
@@ -83,7 +84,7 @@
                     </a>
                 </li>
 
-                <!-- Transaksi (admin & marketing) -->
+                <!-- Transaksi -->
                 <li class="nav-item">
                     <a href="{{ route('transaksi.index') }}">
                         <i class="fas fa-shopping-cart"></i>
@@ -91,7 +92,7 @@
                     </a>
                 </li>
 
-                <!-- Follow Up (admin & marketing) -->
+                <!-- Follow Up -->
                 <li class="nav-item">
                     <a href="{{ route('followups.index') }}">
                         <i class="fas fa-phone"></i>
@@ -117,3 +118,45 @@
         </div>
     </div>
 </div>
+<style>
+/* SIDEBAR GRADIENT */
+.custom-sidebar {
+    background: linear-gradient(135deg, #5296e4, #d8d5db);
+    box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+}
+
+/* Logo header biar nyatu */
+.custom-sidebar .logo-header {
+    background: transparent !important;
+}
+
+/* Text & icon */
+.custom-sidebar .nav-item a {
+    color: #ffffff;
+    transition: 0.3s;
+}
+
+.custom-sidebar .nav-item a i {
+    color: #ffffff;
+}
+
+/* Hover */
+.custom-sidebar .nav-item a:hover {
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    padding-left: 10px;
+}
+
+/* Active menu */
+.custom-sidebar .nav-item.active a {
+    background: rgba(255,255,255,0.3);
+    border-radius: 10px;
+}
+
+/* Scrollbar biar clean */
+.custom-sidebar .scrollbar-inner {
+    scrollbar-width: thin;
+}
+</style>
+
+

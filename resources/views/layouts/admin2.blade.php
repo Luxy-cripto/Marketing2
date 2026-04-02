@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no"/>
 
-<link rel="icon" href="{{ asset('assets/img/kaiadmin/favicon.ico') }}" type="image/x-icon"/>
+<link rel="icon" href="{{ asset('assets/img/kaiadmin/faviconicom.ico') }}" type="image/x-icon"/>
 
 <!-- Fonts -->
 <script src="{{ asset('assets/js/plugin/webfont/webfont.min.js') }}"></script>
@@ -28,7 +28,6 @@ WebFont.load({
     },
 });
 </script>
-
 <!-- CSS -->
 <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}" />
 <link rel="stylesheet" href="{{ asset('assets/css/plugins.min.css') }}" />
