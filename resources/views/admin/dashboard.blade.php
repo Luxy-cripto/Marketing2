@@ -86,46 +86,56 @@
     </div>
 
     {{-- TABEL FOLLOW UP --}}
-    <div class="card shadow-sm p-3">
-        <h5>10 Follow-Up Terbaru</h5>
-        <div class="table-responsive" style="max-height:400px; overflow-y:auto;">
-            <table class="table table-hover table-striped align-middle">
-                <thead class="table-light sticky-top">
-                    <tr>
-                        <th>No</th>
-                        <th>Konsumen</th>
-                        <th>Status</th>
-                        <th>Catatan</th>
-                        <th>Tanggal Follow-Up</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($followUps as $index => $followUp)
-                    <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>{{ $followUp->konsumen->nama ?? '-' }}</td>
-                        <td>
-                            <span class="badge
-                                {{ $followUp->status=='Deal'?'bg-success':($followUp->status=='Follow-Up'?'bg-warning':'bg-secondary') }}">
-                                {{ $followUp->status ?? '-' }}
-                            </span>
-                        </td>
-                        <td>{{ $followUp->catatan ?? '-' }}</td>
-                        <td>
-                            {{ $followUp->follow_up_date
-                                ? \Carbon\Carbon::parse($followUp->follow_up_date)->format('d M Y H:i')
-                                : '-' }}
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="text-center">Belum ada follow-up</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+    {{-- TABEL FOLLOW UP --}}
+<div class="card shadow-sm p-3">
+    <h5>10 Follow-Up Terbaru</h5>
+    <div class="table-responsive" style="max-height:400px; overflow-y:auto;">
+        <table class="table table-hover table-striped align-middle">
+            <thead class="table-light sticky-top">
+                <tr>
+                    <th>#</th>
+                    <th>Konsumen</th>
+                    <th>Status</th>
+                    <th>Catatan</th>
+                    <th>Tanggal Follow-Up</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($followUps as $index => $followUp)
+                <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $followUp->konsumen->nama ?? '-' }}</td>
+
+                    <td>
+                        @php
+                            $status = $followUp->status;
+                        @endphp
+
+                        <span class="badge
+                            {{ $status == 'Deal' ? 'bg-success' :
+                               (in_array($status, ['Follow-Up','Belum Dihubungi']) ? 'bg-warning text-dark' : 'bg-secondary') }}">
+                            {{ $status ?? '-' }}
+                        </span>
+                    </td>
+
+                    <td>{{ $followUp->catatan ?? '-' }}</td>
+
+                    <td>
+                        {{ $followUp->follow_up_date
+                            ? \Carbon\Carbon::parse($followUp->follow_up_date)->format('d M Y H:i')
+                            : '-' }}
+                    </td>
+                </tr>
+
+                @empty
+                <tr>
+                    <td colspan="5" class="text-center">Belum ada follow-up</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
+</div>
 
 </div>
 
