@@ -92,7 +92,7 @@
             <table class="table table-hover table-striped align-middle">
                 <thead class="table-light sticky-top">
                     <tr>
-                        <th>#</th>
+                        <th>No</th>
                         <th>Konsumen</th>
                         <th>Status</th>
                         <th>Catatan</th>

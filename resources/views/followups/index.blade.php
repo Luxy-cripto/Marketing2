@@ -4,116 +4,125 @@
 
 <div class="container">
 
-<!-- HEADER -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="fw-bold">📋 Daftar Follow-Up</h4>
-</div>
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold">📋 Daftar Follow-Up</h4>
+    </div>
 
-@if(session('success'))
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-@endif
+    @if(session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
 
+    <!-- CARD -->
+    <div class="card shadow-sm">
 
-<!-- TABLE FOLLOW UP -->
-<div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">Data Follow-Up Konsumen</h5>
+        </div>
 
-<div class="card-header">
-    <h4 class="card-title mb-0">Data Follow-Up Konsumen</h4>
-</div>
+        <div class="card-body">
+            <div class="table-responsive">
 
-<div class="card-body">
+                <table class="table table-striped table-hover align-middle">
 
-<div class="table-responsive">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="60">No</th>
+                            <th>Konsumen</th>
+                            <th>Status</th>
+                            <th>Catatan</th>
+                            <th>Tanggal Follow-Up</th>
+                            <th>User</th>
+                            <th width="150">Aksi</th>
+                        </tr>
+                    </thead>
 
-<table class="display table table-striped table-hover">
+                    <tbody>
 
-<thead>
-<tr>
-    <th width="60">No</th>
-    <th>Konsumen</th>
-    <th>Status</th>
-    <th>Catatan</th>
-    <th>Tanggal Follow-Up</th>
-    <th>User</th>
-    <th width="150">Aksi</th>
-</tr>
-</thead>
+                        @forelse($followUps as $i => $f)
 
-<tbody>
+                            @php
+                                $status = $f->status;
 
-@forelse($followUps as $i => $f)
+                                $badge = match($status) {
+                                    'Belum Dihubungi' => 'warning text-dark',
+                                    'Prospek' => 'primary',
+                                    'Deal' => 'success',
+                                    'Tidak Deal' => 'danger',
+                                    default => 'secondary',
+                                };
+                            @endphp
 
-<tr>
+                            <tr>
+                                <td>{{ $i + 1 }}</td>
 
-<td>{{ $i + 1 }}</td>
+                                <td>
+                                    {{ $f->konsumen->nama ?? '-' }}
+                                </td>
 
-<td>
-{{ $f->konsumen ? $f->konsumen->nama : '-' }}
-</td>
+                                <td>
+                                    <span class="badge bg-{{ $badge }}">
+                                        {{ $status }}
+                                    </span>
+                                </td>
 
-<td>
-<span class="badge bg-info">
-{{ $f->status }}
-</span>
-</td>
+                                <td>
+                                    {{ $f->catatan ?? '-' }}
+                                </td>
 
-<td>
-{{ $f->catatan ?? '-' }}
-</td>
+                                <td>
+                                    @if($f->follow_up_date)
+                                        {{ \Carbon\Carbon::parse($f->follow_up_date)->format('d M Y H:i') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
 
-<td>
+                                <td>
+                                    {{ $f->user->name ?? '-' }}
+                                </td>
 
-@if($f->follow_up_date)
+                                <td>
+                                    <a href="{{ route('followups.edit', $f) }}"
+                                       class="btn btn-warning btn-sm">
+                                        <i class="fa fa-edit"></i>
+                                    </a>
 
-{{ \Carbon\Carbon::parse($f->follow_up_date)->format('d M Y H:i') }}
+                                    <form action="{{ route('followups.destroy', $f->id) }}"
+                                          method="POST"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Yakin ingin hapus data ini?')">
 
-@else
--
-@endif
+                                        @csrf
+                                        @method('DELETE')
 
-</td>
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
 
-<td>
-{{ $f->user ? $f->user->name : '-' }}
-</td>
+                        @empty
 
-<td>
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">
+                                    Tidak ada follow-up
+                                </td>
+                            </tr>
 
-<a href="{{ route('followups.edit', $f) }}"class="btn btn-warning btn-sm">
-<i class="fa fa-edit"></i>
-</a>
+                        @endforelse
 
-<form action="{{ route('followups.destroy', $f->id) }}"
-method="POST"
-class="d-inline"
-onsubmit="return confirm('Yakin ingin hapus data ini?')">
+                    </tbody>
 
-@csrf
-@method('DELETE')
-<button type="submit" class="btn btn-danger btn-sm">
-<i class="fa fa-trash"></i>
-</button>
-</form>
-</td>
-</tr>
+                </table>
 
-@empty
+            </div>
+        </div>
 
-<tr>
-<td colspan="7" class="text-center">Tidak ada follow-up</td>
-</tr>
-
-@endforelse
-
-</tbody>
-
-</table>
-
-</div>
-</div>
-</div>
+    </div>
 
 </div>
 

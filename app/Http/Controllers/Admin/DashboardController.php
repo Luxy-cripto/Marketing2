@@ -19,16 +19,16 @@ class DashboardController extends Controller
         // STATISTIK UTAMA
         // =========================
         $totalKonsumen = Konsumen::count();
-        $totalProspek = Konsumen::where('status', 'Prospek')->count();
-        $totalDeal = Konsumen::where('status', 'Deal')->count();
-        $totalOmset = Transaksi::sum('total');
+        $totalProspek  = Konsumen::where('status', 'Prospek')->count();
+        $totalDeal     = Konsumen::where('status', 'Deal')->count();
+        $totalOmset    = Transaksi::sum('total');
 
         // =========================
-        // DEAL PER BULAN (12 BULAN FIX)
+        // DEAL PER BULAN
         // =========================
         $dealData = Konsumen::select(
                 DB::raw('MONTH(created_at) as bulan'),
-                DB::raw('count(*) as total')
+                DB::raw('COUNT(*) as total')
             )
             ->where('status', 'Deal')
             ->whereYear('created_at', $today->year)
@@ -37,7 +37,6 @@ class DashboardController extends Controller
             ->toArray();
 
         $dealPerBulan = [];
-
         for ($i = 1; $i <= 12; $i++) {
             $dealPerBulan[] = $dealData[$i] ?? 0;
         }
@@ -45,10 +44,23 @@ class DashboardController extends Controller
         // =========================
         // FOLLOW UP TERBARU
         // =========================
-        $followUps = FollowUp::with('konsumen')
+        $followUps = FollowUp::with(['konsumen', 'user'])
             ->latest()
             ->take(10)
             ->get();
+
+        // =========================
+        // FOLLOW UP HARI INI
+        // =========================
+        $todayFollowUps = FollowUp::whereDate('follow_up_date', $today->toDateString())
+            ->count();
+
+        // =========================
+        // FOLLOW UP TERLEWAT (OVERDUE)
+        // =========================
+        $overdueFollowUps = FollowUp::whereDate('follow_up_date', '<', $today->toDateString())
+            ->where('status', '!=', 'Deal')
+            ->count();
 
         // =========================
         // TARGET OMSET BULAN INI
@@ -69,15 +81,19 @@ class DashboardController extends Controller
                 ->whereYear('created_at', $today->year)
                 ->sum('total');
 
+            // kalau target tercapai
             if ($userOmset >= $target->target_omset) {
                 $targetNotifications[] = [
-                    'user_name' => $target->user->name,
-                    'target_omset' => $target->target_omset,
+                    'user_name'   => $target->user->name,
+                    'target_omset'=> $target->target_omset,
                     'total_omset' => $userOmset,
                 ];
             }
         }
 
+        // =========================
+        // RETURN KE VIEW
+        // =========================
         return view('admin.dashboard', compact(
             'totalKonsumen',
             'totalProspek',
@@ -85,6 +101,8 @@ class DashboardController extends Controller
             'totalOmset',
             'dealPerBulan',
             'followUps',
+            'todayFollowUps',
+            'overdueFollowUps',
             'targetNotifications'
         ));
     }
