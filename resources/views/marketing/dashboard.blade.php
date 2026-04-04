@@ -139,6 +139,8 @@
                             <li><strong>Tidak Tertarik:</strong> Jumlah lead yang menyatakan tidak tertarik.</li>
                             <li><strong>Closing:</strong> Jumlah deal yang berhasil ditutup dengan sukses.</li>
                             <li><strong>Total Omset:</strong> Total pendapatan yang dihasilkan dari deal yang berhasil ditutup.</li>
+                            <li><strong>Lunas:</strong> Jumlah transaksi yang sudah lunas beserta total omzetnya.</li>
+                            <li><strong>Belum Dibayar:</strong> Jumlah transaksi yang belum dibayar beserta total omzetnya.</li>
                         </ul>
 
                     </div>
@@ -234,6 +236,7 @@
                             <th>Nama</th>
                             <th>No HP</th>
                             <th>Produk</th>
+                            <th>Total</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -248,6 +251,9 @@
 
                             <td>
                                 {{ $k->transaksis->first()?->produk?->nama ?? '-' }}
+                            </td>
+                            <td class="text-danger fw-bold">
+                                Rp {{ number_format($k->transaksis->sum('total'),0,',','.') }}
                             </td>
 
                             <td>
