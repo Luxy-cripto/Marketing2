@@ -79,50 +79,50 @@
             </div>
         </div>
 
-       <div class="row g-3 mt-2">
+        <div class="row g-3 mt-2">
 
-        <!-- LUNAS -->
-     <div class="col-md-6">
-            <div class="card shadow-sm text-center border-0">
-                <div class="card-body">
-                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+            <!-- LUNAS -->
+            <div class="col-md-6">
+                <div class="card shadow-sm text-center border-0">
+                    <div class="card-body">
+                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
 
-                    <p class="text-muted mb-1">Lunas</p>
+                        <p class="text-muted mb-1">Lunas</p>
 
-                    <h2 class="fw-bold text-success">
-                        {{ $jumlahLunas }} Transaksi
-                    </h2>
+                        <h2 class="fw-bold text-success">
+                            {{ $jumlahLunas }} Transaksi
+                        </h2>
 
-                    <small class="text-muted">
-                        Rp {{ number_format($totalLunas,0,',','.') }}
-                    </small>
+                        <small class="text-muted">
+                            Rp {{ number_format($totalLunas, 0, ',', '.') }}
+                        </small>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- BELUM DIBAYAR -->
-        <div class="col-md-6">
-            <div class="card shadow-sm text-center border-0">
-                <div class="card-body">
-                    <i class="fas fa-money-bill-wave fa-2x text-primary mb-2"></i>
+            <!-- BELUM DIBAYAR -->
+            <div class="col-md-6">
+                <div class="card shadow-sm text-center border-0">
+                    <div class="card-body">
+                        <i class="fas fa-money-bill-wave fa-2x text-primary mb-2"></i>
 
-                    <p class="text-muted mb-1">Belum Dibayar</p>
+                        <p class="text-muted mb-1">Belum Dibayar</p>
 
-                    <h2 class="fw-bold text-primary">
-                        {{ $jumlahBelumBayar }} Transaksi
-                    </h2>
+                        <h2 class="fw-bold text-primary">
+                            {{ $jumlahBelumBayar }} Transaksi
+                        </h2>
 
-                    <small class="text-muted">
-                        Rp {{ number_format($totalBelumBayar,0,',','.') }}
-                    </small>
+                        <small class="text-muted">
+                            Rp {{ number_format($totalBelumBayar, 0, ',', '.') }}
+                        </small>
+                    </div>
                 </div>
             </div>
+
         </div>
 
-    </div>
 
-
-        <div c lass="row mt-3">
+        <div class="row mt-3">
 
             <div class="col-md-12">
 
@@ -138,9 +138,8 @@
                             <li><strong>Deal:</strong> Jumlah lead yang berhasil dikonversi menjadi deal.</li>
                             <li><strong>Tidak Tertarik:</strong> Jumlah lead yang menyatakan tidak tertarik.</li>
                             <li><strong>Closing:</strong> Jumlah deal yang berhasil ditutup dengan sukses.</li>
-                            <li><strong>Total Omset:</strong> Total pendapatan yang dihasilkan dari deal yang berhasil ditutup.</li>
-                            <li><strong>Lunas:</strong> Jumlah transaksi yang sudah lunas beserta total omzetnya.</li>
-                            <li><strong>Belum Dibayar:</strong> Jumlah transaksi yang belum dibayar beserta total omzetnya.</li>
+                            <li><strong>Total Omset:</strong> Total pendapatan yang dihasilkan dari deal yang berhasil
+                                ditutup.</li>
                         </ul>
 
                     </div>
@@ -153,129 +152,224 @@
 
         <div class="row mt-3">
 
-    <!-- DEAL SUDAH BAYAR -->
-    <div class="col-md-6">
+            <!-- DEAL SUDAH BAYAR -->
+            <div class="col-md-6">
 
-        <div class="card shadow-sm">
+                <div class="card shadow-sm">
 
-            <div class="card-header">
-                <h5 class="fw-bold text-success">
-                    <i class="fas fa-money-check-alt"></i> Deal Sudah Bayar
-                </h5>
+                    <div class="card-header">
+                        <h5 class="fw-bold text-success">
+                            <i class="fas fa-money-check-alt"></i> Deal Sudah Bayar
+                        </h5>
+                    </div>
+
+                    <div class="card-body p-0">
+
+                        <table class="table table-sm mb-0">
+
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>No HP</th>
+                                    <th>Produk</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @forelse($sudahBayar as $k)
+
+                                    <tr>
+                                        <td>{{ $k->nama }}</td>
+                                        <td>{{ $k->no_hp }}</td>
+
+                                        <td>
+                                            {{ $k->transaksis->first()?->produk?->nama ?? '-' }}
+                                        </td>
+
+                                        <td class="text-success fw-bold">
+                                            Rp {{ number_format($k->transaksis->sum('total'), 0, ',', '.') }}
+                                        </td>
+                                    </tr>
+
+                                @empty
+
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">
+                                            Belum ada pembayaran
+                                        </td>
+                                    </tr>
+
+                                @endforelse
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
             </div>
 
-            <div class="card-body p-0">
 
-                <table class="table table-sm mb-0">
 
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nama</th>
-                            <th>No HP</th>
-                            <th>Produk</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
+            <!-- DEAL BELUM BAYAR -->
+            <div class="col-md-6">
+                <div class="card shadow-sm">
 
-                    <tbody>
+                    <div class="card-header">
+                        <h5 class="fw-bold text-danger">
+                            <i class="fas fa-clock"></i> Deal Belum Bayar
+                        </h5>
+                    </div>
 
-                        @forelse($sudahBayar as $k)
+                    <div class="card-body p-0">
 
-                        <tr>
-                            <td>{{ $k->nama }}</td>
-                            <td>{{ $k->no_hp }}</td>
+                        <!-- WAJIB: biar tidak tembus -->
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0 table-bordered">
 
-                            <td>
-                                {{ $k->transaksis->first()?->produk?->nama ?? '-' }}
-                            </td>
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 25%">Nama</th>
+                                        <th style="width: 20%">No HP</th>
+                                        <th style="width: 30%">Produk</th>
+                                        <th style="width: 25%">Status</th>
+                                    </tr>
+                                </thead>
 
-                            <td class="text-success fw-bold">
-                                Rp {{ number_format($k->transaksis->sum('total'),0,',','.') }}
-                            </td>
-                        </tr>
+                                <tbody>
+                                    @forelse($belumBayar as $k)
+                                        <tr>
+                                            <td class="wrap-text">{{ $k->nama }}</td>
+                                            <td class="wrap-text">{{ $k->no_hp }}</td>
 
-                        @empty
+                                            <td class="wrap-text">
+                                                {{ $k->transaksis->first()?->produk?->nama ?? '-' }}
+                                            </td>
 
-                        <tr>
-                            <td colspan="4" class="text-center text-muted">
-                                Belum ada pembayaran
-                            </td>
-                        </tr>
+                                            <td>
+                                                <span class="badge bg-warning text-dark">
+                                                    Menunggu Pembayaran
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">
+                                                Tidak ada data
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
 
-                        @endforelse
+                            </table>
+                        </div>
 
-                    </tbody>
-
-                </table>
-
+                    </div>
+                </div>
             </div>
 
         </div>
 
-    </div>
+        <div class="row mt-3">
+            <div class="col-md-12">
 
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="fw-bold">📦 Target vs Omset Per Produk</h5>
+                    </div>
 
+                    <div class="card-body p-0">
 
-    <!-- DEAL BELUM BAYAR -->
-    <div class="col-md-6">
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0">
+
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Produk</th>
+                                        <th>Target Lead</th>
+                                        <th>Target Omset</th>
+                                        <th>Omset Bulan Ini</th>
+                                        <th>Progress</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+
+                                    @forelse($targetDetails as $d)
+
+                                        @php
+                                            $omset = $omsetPerProduk[$d->produk_id] ?? 0;
+
+                                            $progressProduk = $d->target_omset_produk > 0
+                                                ? min(($omset / $d->target_omset_produk) * 100, 100)
+                                                : 0;
+                                        @endphp
+
+                                        <tr>
+                                            <td>{{ $d->produk->nama ?? '-' }}</td>
+
+                                            <td>{{ $d->target_qty }}</td>
+
+                                            <td>
+                                                Rp {{ number_format($d->target_omset_produk, 0, ',', '.') }}
+                                            </td>
+
+                                            <td class="text-success fw-bold">
+                                                Rp {{ number_format($omset, 0, ',', '.') }}
+                                            </td>
+
+                                            <td style="width:200px">
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-success" style="width: {{ $progressProduk }}%">
+                                                        {{ round($progressProduk) }}%
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                    @empty
+
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">
+                                                Belum ada target produk
+                                            </td>
+                                        </tr>
+
+                                    @endforelse
+
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row mt-3">
+
+    <div class="col-md-12">
 
         <div class="card shadow-sm">
 
-            <div class="card-header">
-                <h5 class="fw-bold text-danger">
-                    <i class="fas fa-clock"></i> Deal Belum Bayar
-                </h5>
-            </div>
+            <div class="card-body text-center">
 
-            <div class="card-body p-0">
+                <h5 class="fw-bold mb-3">💰 Total Omset</h5>
 
-                <table class="table table-sm mb-0">
+                <h2 class="fw-bold text-success">
+                    Rp {{ number_format($totalOmset, 0, ',', '.') }}
+                </h2>
 
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nama</th>
-                            <th>No HP</th>
-                            <th>Produk</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                        @forelse($belumBayar as $k)
-
-                        <tr>
-                            <td>{{ $k->nama }}</td>
-                            <td>{{ $k->no_hp }}</td>
-
-                            <td>
-                                {{ $k->transaksis->first()?->produk?->nama ?? '-' }}
-                            </td>
-                            <td class="text-danger fw-bold">
-                                Rp {{ number_format($k->transaksis->sum('total'),0,',','.') }}
-                            </td>
-
-                            <td>
-                                <span class="badge bg-warning">
-                                    Menunggu Pembayaran
-                                </span>
-                            </td>
-                        </tr>
-
-                        @empty
-
-                        <tr>
-                            <td colspan="4" class="text-center text-muted">
-                                Tidak ada data
-                            </td>
-                        </tr>
-
-                        @endforelse
-
-                    </tbody>
-
-                </table>
+                <p class="text-muted mb-0">
+                    Total omset dari seluruh produk bulan ini
+                </p>
 
             </div>
 
@@ -284,46 +378,6 @@
     </div>
 
 </div>
-
-
-        <div class="row mt-3">
-
-            <div class="col-md-12">
-
-                <div class="card shadow-sm">
-
-                    <div class="card-body">
-
-                        <h5 class="fw-bold">🎯 Target Omset</h5>
-
-                        <div class="d-flex justify-content-between mb-2">
-
-                            <span>
-                                Progress {{ round($progress) }}%
-                            </span>
-
-                            <span class="fw-bold text-primary">
-
-                                {{ $target ? 'Rp ' . number_format($target->target_omset, 0, ',', '.') : 'Belum Diset' }}
-
-                            </span>
-
-                        </div>
-
-                        <div class="progress">
-
-                            <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
-                                style="width: {{ $progress }}%"></div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
 
 
 

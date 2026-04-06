@@ -1,128 +1,56 @@
 @extends('layouts.admin2')
 
 @section('content')
-<div class="container py-4">
+    <div class="container py-4">
 
-    <div class="card shadow-sm border-0">
+        <div class="card">
+            <div class="card-body">
 
-        <div class="card-header bg-light">
-            <h4 class="mb-0 fw-semibold">
-                ✏️ Edit Target Marketing
-            </h4>
-        </div>
+                <form action="{{ route('targets.update', $target->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
 
-        <div class="card-body">
-
-            <form action="{{ route('targets.update', $target->id) }}" method="POST">
-                @csrf
-                @method('PUT')
-
-                <!-- User Marketing -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">
-                        User Marketing
-                    </label>
-
-                    <select name="user_id" class="form-select" required>
-                        <option value="">-- Pilih Marketing --</option>
-
+                    <select name="user_id" class="form-control mb-3">
                         @foreach(\App\Models\User::all() as $user)
-                            <option value="{{ $user->id }}"
-                                {{ $target->user_id == $user->id ? 'selected' : '' }}>
+                            <option value="{{ $user->id }}" {{ $target->user_id == $user->id ? 'selected' : '' }}>
                                 {{ $user->name }}
                             </option>
                         @endforeach
-
                     </select>
-                </div>
 
-                <!-- Bulan & Tahun -->
-                <div class="row">
+                    <input type="number" name="bulan" value="{{ $target->bulan }}" class="form-control mb-2">
+                    <input type="number" name="tahun" value="{{ $target->tahun }}" class="form-control mb-3">
 
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">
-                            Bulan
-                        </label>
+                    <h5>Target Produk</h5>
 
-                        <input
-                            type="number"
-                            name="bulan"
-                            class="form-control"
-                            min="1"
-                            max="12"
-                            value="{{ $target->bulan }}"
-                            required
-                        >
-                    </div>
+                    <table class="table">
+                        @foreach(\App\Models\Produk::all() as $produk)
+                            @php
+                                $detail = $target->details->where('produk_id', $produk->id)->first();
+                            @endphp
 
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">
-                            Tahun
-                        </label>
+                            <tr>
+                                <td>{{ $produk->nama }}</td>
 
-                        <input
-                            type="number"
-                            name="tahun"
-                            class="form-control"
-                            min="2000"
-                            value="{{ $target->tahun }}"
-                            required
-                        >
-                    </div>
+                                <td>
+                                    <input type="number" name="produk[{{ $produk->id }}][qty]" class="form-control"
+                                        value="{{ $detail->target_qty ?? 0 }}">
+                                </td>
 
-                </div>
+                                <td>
+                                    <input type="number" name="produk[{{ $produk->id }}][omset]" class="form-control"
+                                        value="{{ $detail->target_omset_produk ?? 0 }}">
+                                </td>
+                            </tr>
+                        @endforeach
+                    </table>
 
-                <!-- Target Omset -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">
-                        Target Omset
-                    </label>
+                    <button class="btn btn-success">Update</button>
 
-                    <input
-                        type="number"
-                        name="target_omset"
-                        class="form-control"
-                        min="0"
-                        value="{{ $target->target_omset }}"
-                        required
-                    >
-                </div>
+                </form>
 
-                <!-- Target Lead -->
-                <div class="mb-4">
-                    <label class="form-label fw-semibold">
-                        Target Lead
-                    </label>
-
-                    <input
-                        type="number"
-                        name="target_lead"
-                        class="form-control"
-                        min="0"
-                        value="{{ $target->target_lead }}"
-                        required
-                    >
-                </div>
-
-                <hr>
-
-                <!-- Tombol -->
-                <div class="d-flex gap-2">
-
-                    <button class="btn btn-success px-4">
-                        Update
-                    </button>
-
-                    <a href="{{ route('targets.index') }}" class="btn btn-outline-secondary">
-                        Batal
-                    </a>
-
-                </div>
-
-            </form>
-
+            </div>
         </div>
-    </div>
 
-</div>
+    </div>
 @endsection

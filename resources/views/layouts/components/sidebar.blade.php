@@ -123,7 +123,7 @@
 <style>
     /* SIDEBAR GRADIENT */
     .custom-sidebar {
-        background: linear-gradient(135deg, #5296e4, #d8d5db);
+        background: linear-gradient(135deg, #ffffff, #385f88);
         box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
     }
 

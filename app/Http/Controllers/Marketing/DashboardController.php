@@ -9,6 +9,8 @@ use App\Models\Konsumen;
 use App\Models\Target;
 use App\Models\Transaksi;
 use App\Models\FollowUp;
+use App\Models\TargetDetail;
+use App\Models\Produk;
 
 class DashboardController extends Controller
 {
@@ -34,7 +36,7 @@ class DashboardController extends Controller
                 ->first();
         }
 
-        $targetLead  = $target->target_lead ?? 0;
+        $targetLead = $target->target_lead ?? 0;
         $targetOmset = $target->target_omset ?? 0;
 
         // =========================
@@ -122,7 +124,7 @@ class DashboardController extends Controller
                 ->get();
         } else {
             $kpi = collect([
-                (object)[
+                (object) [
                     'user' => $user,
                     'total' => Konsumen::where('user_id', $user->id)->count()
                 ]
@@ -144,6 +146,33 @@ class DashboardController extends Controller
             ->whereHas('transaksis', fn($q) => $q->whereRaw('LOWER(status) = ?', ['lunas']))
             ->with(['transaksis' => fn($q) => $q->whereRaw('LOWER(status) = ?', ['lunas'])->with('produk')])
             ->get();
+
+        // =========================
+// TARGET PER PRODUK (BULAN INI)
+// =========================
+        $targetDetails = TargetDetail::with('produk')
+            ->whereHas('target', function ($q) use ($bulan, $tahun, $user, $isAdmin) {
+                $q->whereMonth('created_at', $bulan)
+                    ->whereYear('created_at', $tahun);
+
+                if (!$isAdmin) {
+                    $q->where('user_id', $user->id);
+                }
+            })
+            ->get();
+
+
+        // =========================
+// OMSET PER PRODUK (BULAN INI)
+// =========================
+        $omsetPerProduk = Transaksi::selectRaw('produk_id, SUM(total) as total')
+            ->whereMonth('created_at', $bulan)
+            ->whereYear('created_at', $tahun)
+            ->when(!$isAdmin, function ($q) use ($user) {
+                $q->whereHas('konsumen', fn($qq) => $qq->where('user_id', $user->id));
+            })
+            ->groupBy('produk_id')
+            ->pluck('total', 'produk_id');
 
         // =========================
         // BELUM BAYAR
@@ -172,7 +201,9 @@ class DashboardController extends Controller
             'jumlahBelumBayar',
             'totalBelumBayar',
             'bulan',
-            'tahun'
+            'tahun',
+            'targetDetails',
+            'omsetPerProduk',
         ));
     }
 }
