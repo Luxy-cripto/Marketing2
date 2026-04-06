@@ -25,7 +25,6 @@ class TransaksiController extends Controller
 
         if (!$konsumen) return;
 
-        // 🔥 LOGIKA BARU: ADA TRANSAKSI = DEAL
         $adaTransaksi = $konsumen->transaksis()->exists();
 
         $konsumen->status = $adaTransaksi ? 'Deal' : 'Prospek';
@@ -133,7 +132,7 @@ class TransaksiController extends Controller
     }
 
     // ===============================
-    // STORE
+    // STORE (🔥 FIX DI SINI)
     // ===============================
     public function store(Request $request)
     {
@@ -154,6 +153,7 @@ class TransaksiController extends Controller
                 return back()->with('error','Stok tidak cukup!');
             }
 
+            // 🔥 SIMPAN TRANSAKSI
             $transaksi = Transaksi::create([
                 'konsumen_id' => $request->konsumen_id,
                 'produk_id' => $request->produk_id,
@@ -164,14 +164,17 @@ class TransaksiController extends Controller
                 'status' => $request->status
             ]);
 
-            // 🔥 AUTO DEAL LANGSUNG
+            // 🔥 AUTO UPDATE STATUS KONSUMEN
             $this->syncStatusKonsumen($request->konsumen_id);
 
+            // 🔥 KURANGI STOK
             $produk->stok -= $request->qty;
             $produk->save();
 
+            // 🔥 AUTO FOLLOW UP (SUDAH ADA transaksi_id 🔥)
             FollowUp::create([
                 'konsumen_id' => $transaksi->konsumen_id,
+                'transaksi_id' => $transaksi->id, // ✅ INI YANG PENTING
                 'user_id' => Auth::id(),
                 'status' => 'Belum Dihubungi',
                 'catatan' => 'Follow-up otomatis dari transaksi #' . $transaksi->id,
@@ -239,7 +242,6 @@ class TransaksiController extends Controller
             $produkBaru->stok -= $request->qty;
             $produkBaru->save();
 
-            // 🔥 AUTO DEAL
             $this->syncStatusKonsumen($request->konsumen_id);
 
             DB::commit();
@@ -270,7 +272,6 @@ class TransaksiController extends Controller
 
             $transaksi->delete();
 
-            // 🔥 UPDATE STATUS
             $this->syncStatusKonsumen($konsumen_id);
 
             DB::commit();
@@ -295,7 +296,6 @@ class TransaksiController extends Controller
             $transaksi->status = 'Lunas';
             $transaksi->save();
 
-            // 🔥 TETAP DEAL (SUDAH PASTI)
             $this->syncStatusKonsumen($transaksi->konsumen_id);
 
             DB::commit();
@@ -314,7 +314,10 @@ class TransaksiController extends Controller
     // ===============================
     public function show($id)
     {
-        $transaksi = Transaksi::with('konsumen', 'produk')->findOrFail($id);
+        // 🔥 TAMBAHIN FOLLOW UP DI SINI
+        $transaksi = Transaksi::with(['konsumen', 'produk', 'followUps.user'])
+            ->findOrFail($id);
+
         return view('transaksi.show', compact('transaksi'));
     }
 }

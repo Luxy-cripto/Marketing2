@@ -17,7 +17,7 @@ class FollowUpController extends Controller
     {
         $user = Auth::user();
 
-        $followUps = FollowUp::with(['konsumen','user'])
+        $followUps = FollowUp::with(['konsumen','user','transaksi'])
             ->when(!in_array($user->role, ['admin','marketing']), function($q) use ($user){
                 $q->where('user_id', $user->id);
             })
@@ -33,7 +33,9 @@ class FollowUpController extends Controller
     public function create()
     {
         $konsumens = Konsumen::all();
-        return view('followups.create', compact('konsumens'));
+        $transaksis = Transaksi::latest()->get(); // 🔥 tambah ini
+
+        return view('followups.create', compact('konsumens','transaksis'));
     }
 
     // =========================
@@ -43,6 +45,7 @@ class FollowUpController extends Controller
     {
         $request->validate([
             'konsumen_id' => 'required|exists:konsumens,id',
+            'transaksi_id' => 'required|exists:transaksis,id', // 🔥 wajib
             'status' => 'required|in:Belum Dihubungi,Belum Bayar,Sudah Bayar',
             'catatan' => 'nullable|string',
             'follow_up_date' => 'nullable|date',
@@ -50,6 +53,7 @@ class FollowUpController extends Controller
 
         FollowUp::create([
             'konsumen_id' => $request->konsumen_id,
+            'transaksi_id' => $request->transaksi_id, // 🔥 penting
             'status' => $request->status,
             'catatan' => $request->catatan,
             'follow_up_date' => $request->follow_up_date,
@@ -75,8 +79,9 @@ class FollowUpController extends Controller
         }
 
         $konsumens = Konsumen::all();
+        $transaksis = Transaksi::latest()->get(); // 🔥 tambah ini
 
-        return view('followups.edit', compact('followUp','konsumens'));
+        return view('followups.edit', compact('followUp','konsumens','transaksis'));
     }
 
     // =========================
@@ -95,6 +100,7 @@ class FollowUpController extends Controller
 
         $request->validate([
             'konsumen_id' => 'required|exists:konsumens,id',
+            'transaksi_id' => 'required|exists:transaksis,id', // 🔥 wajib
             'status' => 'required|in:Belum Dihubungi,Belum Bayar,Sudah Bayar',
             'catatan' => 'nullable|string',
             'follow_up_date' => 'nullable|date',
@@ -105,17 +111,16 @@ class FollowUpController extends Controller
         // =========================
         $followUp->update([
             'konsumen_id' => $request->konsumen_id,
+            'transaksi_id' => $request->transaksi_id, // 🔥 penting
             'status' => $request->status,
             'catatan' => $request->catatan,
             'follow_up_date' => $request->follow_up_date
         ]);
 
         // =========================
-        // 🔥 AUTO UPDATE TRANSAKSI
+        // 🔥 AUTO UPDATE TRANSAKSI (FIX)
         // =========================
-        $transaksi = Transaksi::where('konsumen_id', $followUp->konsumen_id)
-            ->latest()
-            ->first();
+        $transaksi = Transaksi::find($request->transaksi_id);
 
         if ($transaksi) {
 
@@ -133,7 +138,7 @@ class FollowUpController extends Controller
         // =========================
         // 🔥 AUTO UPDATE KONSUMEN
         // =========================
-        $konsumen = Konsumen::find($followUp->konsumen_id);
+        $konsumen = Konsumen::find($request->konsumen_id);
 
         if ($konsumen) {
 

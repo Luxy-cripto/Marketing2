@@ -25,5 +25,9 @@ class Konsumen extends Model
         return $this->hasMany(Transaksi::class);
     }
 
-    
+    public function produks()
+    {
+        return $this->belongsToMany(Produk::class, 'konsumen_produk');
+    }
+
 }

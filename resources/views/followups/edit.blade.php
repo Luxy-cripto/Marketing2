@@ -24,7 +24,7 @@
             @endif
 
             <!-- FORM -->
-           <form action="{{ route('followups.update', $followUp) }}" method="POST">
+            <form action="{{ route('followups.update', $followUp->id) }}" method="POST">
                 @csrf
                 @method('PUT')
 
@@ -43,6 +43,28 @@
                     </select>
                 </div>
 
+                <!-- 🔥 TRANSAKSI -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Transaksi / Invoice</label>
+                    <select name="transaksi_id" id="transaksi_select" class="form-select" required>
+                        <option value="">-- Pilih Transaksi --</option>
+
+                        @foreach($transaksis as $trx)
+                            <option value="{{ $trx->id }}"
+                                data-total="{{ $trx->total }}"
+                                {{ old('transaksi_id', $followUp->transaksi_id) == $trx->id ? 'selected' : '' }}>
+                                INV-{{ $trx->id }} | {{ $trx->konsumen->nama ?? '-' }} | Rp {{ number_format($trx->total) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- 🔥 TOTAL OTOMATIS -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Total Transaksi</label>
+                    <input type="text" id="total_transaksi" class="form-control bg-light" readonly>
+                </div>
+
                 <!-- Status -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Status Follow Up</label>
@@ -54,12 +76,12 @@
                         </option>
 
                         <option value="Belum Bayar"
-                            {{ old('status', $followUp->status) == 'Belum bayar' ? 'selected' : '' }}>
+                            {{ old('status', $followUp->status) == 'Belum Bayar' ? 'selected' : '' }}>
                             🟡 Belum Bayar
                         </option>
 
                         <option value="Sudah Bayar"
-                            {{ old('status', $followUp->status) == 'Sudah bayar' ? 'selected' : '' }}>
+                            {{ old('status', $followUp->status) == 'Sudah Bayar' ? 'selected' : '' }}>
                             🟢 Sudah Bayar
                         </option>
 
@@ -86,11 +108,11 @@
                 <!-- Tombol -->
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-success px-4">
-                        Update
+                        💾 Update
                     </button>
 
                     <a href="{{ route('followups.index') }}" class="btn btn-outline-secondary">
-                        Kembali
+                        ⬅️ Kembali
                     </a>
                 </div>
 
@@ -100,4 +122,27 @@
     </div>
 
 </div>
+
+<!-- 🔥 SCRIPT AUTO TOTAL -->
+<script>
+    const transaksiSelect = document.getElementById('transaksi_select');
+    const totalField = document.getElementById('total_transaksi');
+
+    function updateTotal() {
+        let selected = transaksiSelect.options[transaksiSelect.selectedIndex];
+        let total = selected.getAttribute('data-total');
+
+        if (total) {
+            totalField.value = 'Rp ' + parseInt(total).toLocaleString('id-ID');
+        } else {
+            totalField.value = '';
+        }
+    }
+
+    transaksiSelect.addEventListener('change', updateTotal);
+
+    // 🔥 load pertama (edit mode)
+    window.addEventListener('load', updateTotal);
+</script>
+
 @endsection

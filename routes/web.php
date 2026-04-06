@@ -11,6 +11,7 @@ use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\TargetController;
 use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ReportController;
 
 use App\Exports\KonsumenExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -213,4 +214,14 @@ Route::middleware(['auth'])->group(function () {
     ->parameters([
         'konsumen' => 'konsumen'
     ]);
+
+
+     /*
+    |--------------------------------------------------------------------------
+    |reports
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    });
 });

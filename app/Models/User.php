@@ -40,4 +40,7 @@ class User extends Authenticatable
             'is_active' => 'boolean',
         ];
     }
+
+    // Relasi ke Target
+    
 }

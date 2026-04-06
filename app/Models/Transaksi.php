@@ -45,4 +45,8 @@ class Transaksi extends Model
     {
         return $this->belongsTo(Produk::class);
     }
+        public function followUps()
+    {
+        return $this->hasMany(FollowUp::class);
+    }
 }

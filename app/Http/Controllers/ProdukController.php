@@ -7,20 +7,27 @@ use Illuminate\Http\Request;
 
 class ProdukController extends Controller
 {
-    // Menampilkan semua produk
+    // ===============================
+    // LIST PRODUK
+    // ===============================
     public function index()
     {
         $produks = Produk::latest()->get();
+
         return view('produk.index', compact('produks'));
     }
 
-    // Form tambah produk
+    // ===============================
+    // FORM TAMBAH
+    // ===============================
     public function create()
     {
         return view('produk.create');
     }
 
-    // Simpan produk baru
+    // ===============================
+    // SIMPAN PRODUK
+    // ===============================
     public function store(Request $request)
     {
         $request->validate([
@@ -30,19 +37,28 @@ class ProdukController extends Controller
             'stok' => 'required|integer|min:0',
         ]);
 
-        Produk::create($request->all());
+        Produk::create([
+            'nama' => $request->nama,
+            'deskripsi' => $request->deskripsi,
+            'harga' => $request->harga,
+            'stok' => $request->stok,
+        ]);
 
         return redirect()->route('produk.index')
             ->with('success', 'Produk berhasil ditambahkan!');
     }
 
-    // Form edit produk
+    // ===============================
+    // FORM EDIT
+    // ===============================
     public function edit(Produk $produk)
     {
         return view('produk.edit', compact('produk'));
     }
 
-    // Update produk
+    // ===============================
+    // UPDATE PRODUK
+    // ===============================
     public function update(Request $request, Produk $produk)
     {
         $request->validate([
@@ -52,18 +68,41 @@ class ProdukController extends Controller
             'stok' => 'required|integer|min:0',
         ]);
 
-        $produk->update($request->all());
+        $produk->update([
+            'nama' => $request->nama,
+            'deskripsi' => $request->deskripsi,
+            'harga' => $request->harga,
+            'stok' => $request->stok,
+        ]);
 
         return redirect()->route('produk.index')
             ->with('success', 'Produk berhasil diupdate!');
     }
 
-    // Hapus produk
+    // ===============================
+    // HAPUS PRODUK (🔥 FIX RELASI)
+    // ===============================
     public function destroy(Produk $produk)
     {
+        // 🔥 HAPUS RELASI KE KONSUMEN DULU
+        if (method_exists($produk, 'konsumens')) {
+            $produk->konsumens()->detach();
+        }
+
         $produk->delete();
 
         return redirect()->route('produk.index')
             ->with('success', 'Produk berhasil dihapus!');
+    }
+
+    // ===============================
+    // DETAIL PRODUK (BONUS 🔥)
+    // ===============================
+    public function show(Produk $produk)
+    {
+        // 🔥 tampilkan konsumen yang minat produk ini
+        $produk->load('konsumens');
+
+        return view('produk.show', compact('produk'));
     }
 }

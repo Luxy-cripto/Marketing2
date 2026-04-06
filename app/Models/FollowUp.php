@@ -33,4 +33,8 @@ class FollowUp extends Model
     {
         return $this->belongsTo(User::class);
     }
+        public function transaksi()
+    {
+        return $this->belongsTo(Transaksi::class);
+    }
 }

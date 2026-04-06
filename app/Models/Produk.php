@@ -22,4 +22,9 @@ class Produk extends Model
     {
         return $this->hasMany(\App\Models\Transaksi::class);
     }
+
+    public function konsumens()
+    {
+        return $this->belongsToMany(Konsumen::class, 'konsumen_produk');
+    }
 }
