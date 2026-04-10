@@ -12,6 +12,8 @@ use App\Http\Controllers\TargetController;
 use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ProfileController;
+
 
 use App\Exports\KonsumenExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -223,5 +225,16 @@ Route::middleware(['auth'])->group(function () {
     */
     Route::middleware(['auth'])->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | profil
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('auth')->group(function () {
+        Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+        Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     });
 });

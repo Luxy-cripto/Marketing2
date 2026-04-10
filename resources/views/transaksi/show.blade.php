@@ -14,17 +14,17 @@
 
             <div class="row mb-3">
                 <div class="col-md-3"><b>Konsumen</b></div>
-                <div class="col-md-9">: {{ $transaksi->konsumen->nama }}</div>
+                <div class="col-md-9">: {{ $transaksi->konsumen->nama ?? '-' }}</div>
             </div>
 
             <div class="row mb-3">
                 <div class="col-md-3"><b>Produk</b></div>
-                <div class="col-md-9">: {{ $transaksi->produk->nama }}</div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-3"><b>Qty</b></div>
-                <div class="col-md-9">: {{ $transaksi->qty }}</div>
+                <div class="col-md-9">
+                    :
+                    @foreach($transaksi->details as $d)
+                        {{ $d->produk->nama ?? '-' }} ({{ $d->qty }} pcs)<br>
+                    @endforeach
+                </div>
             </div>
 
             <div class="row mb-3">
@@ -52,7 +52,7 @@
                     📄 Download Invoice
                 </a>
 
-                <a href="https://wa.me/{{ $transaksi->konsumen->no_hp }}?text=Halo%20{{ $transaksi->konsumen->nama }}%20ini%20invoice%20transaksi%20anda%20#{{ $transaksi->id }}"
+                <a href="https://wa.me/{{ $transaksi->konsumen->no_hp ?? '' }}?text=Halo%20{{ $transaksi->konsumen->nama ?? '' }}%20ini%20invoice%20transaksi%20anda%20#{{ $transaksi->id }}"
                    class="btn btn-success"
                    target="_blank">
                     📲 Kirim WhatsApp

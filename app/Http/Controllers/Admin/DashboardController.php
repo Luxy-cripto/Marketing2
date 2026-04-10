@@ -8,27 +8,30 @@ use App\Models\Konsumen;
 use App\Models\Transaksi;
 use App\Models\FollowUp;
 use App\Models\Target;
+use App\Models\DetailTransaksi;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $today = now();
+        $today = Carbon::now();
 
         // =========================
-        // STATISTIK UTAMA
+        // 1. STATISTIK UTAMA
         // =========================
         $totalKonsumen = Konsumen::count();
-        $totalProspek  = Konsumen::where('status', 'Prospek')->count();
-        $totalDeal     = Konsumen::where('status', 'Deal')->count();
-        $totalOmset    = Transaksi::sum('total');
+        $totalProspek = Konsumen::where('status', 'Prospek')->count();
+        $totalDeal = Konsumen::where('status', 'Deal')->count();
+
+        $totalOmset = Transaksi::where('status', 'Lunas')->sum('total');
 
         // =========================
-        // DEAL PER BULAN
+        // 2. GRAFIK DEAL PER BULAN
         // =========================
         $dealData = Konsumen::select(
                 DB::raw('MONTH(created_at) as bulan'),
-                DB::raw('COUNT(*) as total')
+                DB::raw('count(*) as total')
             )
             ->where('status', 'Deal')
             ->whereYear('created_at', $today->year)
@@ -42,28 +45,30 @@ class DashboardController extends Controller
         }
 
         // =========================
-        // FOLLOW UP TERBARU
+        // 3. 🔥 TOP PRODUK (AMAN)
         // =========================
-        $followUps = FollowUp::with(['konsumen', 'user'])
-            ->latest()
-            ->take(10)
+        $produkTerlaris = DetailTransaksi::with('produk')
+            ->select('produk_id', DB::raw('SUM(qty) as total_qty'))
+            ->groupBy('produk_id')
+            ->orderByDesc('total_qty')
+            ->limit(5)
             ->get();
 
-        // =========================
-        // FOLLOW UP HARI INI
-        // =========================
-        $todayFollowUps = FollowUp::whereDate('follow_up_date', $today->toDateString())
-            ->count();
+        $labelsProduk = $produkTerlaris->map(function($item){
+            return $item->produk->nama ?? 'Produk Dihapus';
+        });
+
+        $dataQtyProduk = $produkTerlaris->pluck('total_qty');
 
         // =========================
-        // FOLLOW UP TERLEWAT (OVERDUE)
+        // 4. FOLLOW UP
         // =========================
-        $overdueFollowUps = FollowUp::whereDate('follow_up_date', '<', $today->toDateString())
-            ->where('status', '!=', 'Deal')
-            ->count();
+        $followUps = FollowUp::with('konsumen')->latest()->limit(10)->get();
+
+        $todayFollowUps = FollowUp::whereDate('follow_up_date', Carbon::today())->get();
 
         // =========================
-        // TARGET OMSET BULAN INI
+        // 5. TARGET NOTIF
         // =========================
         $targets = Target::with('user')
             ->where('tahun', $today->year)
@@ -77,32 +82,29 @@ class DashboardController extends Controller
             $userOmset = Transaksi::whereHas('konsumen', function ($q) use ($target) {
                     $q->where('user_id', $target->user_id);
                 })
-                ->whereMonth('created_at', $today->month)
-                ->whereYear('created_at', $today->year)
+                ->whereMonth('tanggal_transaksi', $today->month)
+                ->whereYear('tanggal_transaksi', $today->year)
+                ->where('status', 'Lunas')
                 ->sum('total');
 
-            // kalau target tercapai
-            if ($userOmset >= $target->target_omset) {
+            if ($target->target_omset > 0 && $userOmset >= $target->target_omset) {
                 $targetNotifications[] = [
-                    'user_name'   => $target->user->name,
-                    'target_omset'=> $target->target_omset,
+                    'user_name' => $target->user->name ?? 'Sales',
                     'total_omset' => $userOmset,
                 ];
             }
         }
 
-        // =========================
-        // RETURN KE VIEW
-        // =========================
         return view('admin.dashboard', compact(
             'totalKonsumen',
             'totalProspek',
             'totalDeal',
             'totalOmset',
             'dealPerBulan',
+            'labelsProduk',
+            'dataQtyProduk',
             'followUps',
             'todayFollowUps',
-            'overdueFollowUps',
             'targetNotifications'
         ));
     }

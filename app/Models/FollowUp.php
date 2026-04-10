@@ -14,6 +14,7 @@ class FollowUp extends Model
 
     protected $fillable = [
         'konsumen_id',
+        'transaksi_id',
         'user_id',
         'status',
         'catatan',
@@ -34,7 +35,7 @@ class FollowUp extends Model
         return $this->belongsTo(User::class);
     }
         public function transaksi()
-    {
-        return $this->belongsTo(Transaksi::class);
-    }
+        {
+            return $this->belongsTo(Transaksi::class, 'transaksi_id');
+        }
 }

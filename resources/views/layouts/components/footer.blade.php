@@ -63,9 +63,16 @@
             <div>
                 <a href="#" class="text-decoration-none me-3">Privacy Policy</a>
                 <a href="#" class="text-decoration-none me-3">Terms of Service</a>
-                <a href="#" class="text-decoration-none">Version 1.0</a>
+                <a href="#" class="text-decoration-none me-3" onclick="showVersion()">
+                    Version 0.1
+                </a>
             </div>
         </div>
 
     </div>
+    <script>
+    function showVersion() {
+        alert("Ini versi 0.1 dari aplikasi");
+    }
+    </script>
 </footer>

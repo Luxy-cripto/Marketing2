@@ -22,4 +22,5 @@ class TargetDetail extends Model
     {
         return $this->belongsTo(Produk::class);
     }
+
 }

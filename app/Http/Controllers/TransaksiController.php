@@ -7,6 +7,7 @@ use App\Models\Transaksi;
 use App\Models\Konsumen;
 use App\Models\Produk;
 use App\Models\FollowUp;
+use App\Models\DetailTransaksi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\TransaksiExport;
 use App\Exports\ProdukTerlarisExport;
@@ -17,22 +18,20 @@ use Illuminate\Support\Facades\DB;
 class TransaksiController extends Controller
 {
     // ===============================
-    // 🔥 AUTO SYNC STATUS KONSUMEN
+    // AUTO SYNC STATUS KONSUMEN
     // ===============================
     private function syncStatusKonsumen($konsumen_id)
     {
         $konsumen = Konsumen::with('transaksis')->find($konsumen_id);
-
         if (!$konsumen) return;
 
         $adaTransaksi = $konsumen->transaksis()->exists();
-
         $konsumen->status = $adaTransaksi ? 'Deal' : 'Prospek';
         $konsumen->save();
     }
 
     // ===============================
-    // EXPORT TRANSAKSI
+    // EXPORT EXCEL
     // ===============================
     public function exportTransaksi(Request $request)
     {
@@ -47,9 +46,6 @@ class TransaksiController extends Controller
         );
     }
 
-    // ===============================
-    // EXPORT PRODUK TERLARIS
-    // ===============================
     public function exportProdukTerlaris(Request $request)
     {
         return Excel::download(
@@ -63,24 +59,21 @@ class TransaksiController extends Controller
     // ===============================
     public function invoice($id)
     {
-        $transaksi = Transaksi::with(['konsumen','produk'])->findOrFail($id);
+        $transaksi = Transaksi::with(['konsumen', 'details.produk'])->findOrFail($id);
         $pdf = Pdf::loadView('transaksi.invoice', compact('transaksi'));
-        return $pdf->download('invoice-'.$transaksi->id.'.pdf');
+        return $pdf->download('invoice-' . $transaksi->id . '.pdf');
     }
 
     // ===============================
-    // LIST
+    // LIST DATA
     // ===============================
     public function index(Request $request)
     {
-        $query = Transaksi::with(['konsumen','produk']);
+        $query = Transaksi::with(['konsumen', 'details.produk']);
 
         if ($request->search) {
-            $query->where(function($q) use ($request){
-                $q->whereHas('konsumen', fn($q2) =>
-                    $q2->where('nama','like','%'.$request->search.'%'))
-                ->orWhereHas('produk', fn($q2) =>
-                    $q2->where('nama','like','%'.$request->search.'%'));
+            $query->whereHas('konsumen', function ($q) use ($request) {
+                $q->where('nama', 'like', '%' . $request->search . '%');
             });
         }
 
@@ -94,21 +87,21 @@ class TransaksiController extends Controller
 
         $transaksis = $query->latest()->paginate(10);
 
-        $totalOmzet = (clone $query)
-            ->where('status','Lunas')
-            ->sum('total');
+        $totalOmzet = (clone $query)->where('status', 'Lunas')->sum('total');
 
-        $totalProduk = (clone $query)
-            ->where('status','Lunas')
-            ->sum('qty');
+        $totalProduk = DB::table('detail_transaksis')
+            ->join('transaksis', 'detail_transaksis.transaksi_id', '=', 'transaksis.id')
+            ->where('transaksis.status', 'Lunas')
+            ->sum('detail_transaksis.qty');
 
-        $produkTerlaris = DB::table('transaksis')
-            ->join('produks','transaksis.produk_id','=','produks.id')
-            ->where('transaksis.status','Lunas')
+        $produkTerlaris = DB::table('detail_transaksis')
+            ->join('produks', 'detail_transaksis.produk_id', '=', 'produks.id')
+            ->join('transaksis', 'detail_transaksis.transaksi_id', '=', 'transaksis.id')
+            ->where('transaksis.status', 'Lunas')
             ->select(
                 'produks.nama',
-                DB::raw('SUM(transaksis.qty) as total_qty'),
-                DB::raw('SUM(transaksis.total) as total_omzet')
+                DB::raw('SUM(detail_transaksis.qty) as total_qty'),
+                DB::raw('SUM(detail_transaksis.subtotal) as total_omzet')
             )
             ->groupBy('produks.nama')
             ->orderByDesc('total_qty')
@@ -116,7 +109,10 @@ class TransaksiController extends Controller
             ->get();
 
         return view('transaksi.index', compact(
-            'transaksis','totalOmzet','totalProduk','produkTerlaris'
+            'transaksis',
+            'totalOmzet',
+            'totalProduk',
+            'produkTerlaris'
         ));
     }
 
@@ -132,14 +128,16 @@ class TransaksiController extends Controller
     }
 
     // ===============================
-    // STORE (🔥 FIX DI SINI)
+    // STORE (🔥 FINAL)
     // ===============================
     public function store(Request $request)
     {
         $request->validate([
             'konsumen_id' => 'required|exists:konsumens,id',
-            'produk_id' => 'required|exists:produks,id',
-            'qty' => 'required|integer|min:1',
+            'produk_id' => 'required|array',
+            'produk_id.*' => 'exists:produks,id',
+            'qty' => 'required|array',
+            'qty.*' => 'integer|min:1',
             'tanggal_transaksi' => 'required|date',
             'status' => 'required|in:Belum Bayar,Lunas'
         ]);
@@ -147,112 +145,78 @@ class TransaksiController extends Controller
         DB::beginTransaction();
 
         try {
-            $produk = Produk::findOrFail($request->produk_id);
-
-            if ($produk->stok < $request->qty) {
-                return back()->with('error','Stok tidak cukup!');
-            }
-
-            // 🔥 SIMPAN TRANSAKSI
             $transaksi = Transaksi::create([
                 'konsumen_id' => $request->konsumen_id,
-                'produk_id' => $request->produk_id,
-                'qty' => $request->qty,
-                'harga_satuan' => $produk->harga,
-                'total' => $produk->harga * $request->qty,
                 'tanggal_transaksi' => $request->tanggal_transaksi,
-                'status' => $request->status
+                'status' => $request->status,
+                'total' => 0
             ]);
 
-            // 🔥 AUTO UPDATE STATUS KONSUMEN
-            $this->syncStatusKonsumen($request->konsumen_id);
+            $total = 0;
 
-            // 🔥 KURANGI STOK
-            $produk->stok -= $request->qty;
-            $produk->save();
+            foreach ($request->produk_id as $i => $produk_id) {
+                $produk = Produk::findOrFail($produk_id);
+                $qty = $request->qty[$i];
 
-            // 🔥 AUTO FOLLOW UP (SUDAH ADA transaksi_id 🔥)
-            FollowUp::create([
-                'konsumen_id' => $transaksi->konsumen_id,
-                'transaksi_id' => $transaksi->id, // ✅ INI YANG PENTING
-                'user_id' => Auth::id(),
-                'status' => 'Belum Dihubungi',
-                'catatan' => 'Follow-up otomatis dari transaksi #' . $transaksi->id,
-                'follow_up_date' => now()
+                if ($produk->stok < $qty) {
+                    throw new \Exception("Stok {$produk->nama} tidak cukup!");
+                }
+
+                $subtotal = $qty * $produk->harga;
+
+                DetailTransaksi::create([
+                'transaksi_id' => $transaksi->id,
+                'produk_id' => $produk_id,
+                'qty' => $qty,
+                'harga' => $produk->harga, // 🔥 WAJIB TAMBAH
+                'harga_satuan' => $produk->harga,
+                'subtotal' => $subtotal
             ]);
 
-            DB::commit();
+                $produk->stok -= $qty;
+                $produk->save();
 
-            return redirect()->route('transaksi.success', $transaksi->id);
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back()->with('error','Error: '.$e->getMessage());
-        }
-    }
-
-    // ===============================
-    // EDIT
-    // ===============================
-    public function edit(Transaksi $transaksi)
-    {
-        return view('transaksi.edit', [
-            'transaksi' => $transaksi,
-            'konsumens' => Konsumen::all(),
-            'produks' => Produk::all()
-        ]);
-    }
-
-    // ===============================
-    // UPDATE
-    // ===============================
-    public function update(Request $request, Transaksi $transaksi)
-    {
-        $request->validate([
-            'konsumen_id' => 'required|exists:konsumens,id',
-            'produk_id' => 'required|exists:produks,id',
-            'qty' => 'required|integer|min:1',
-            'tanggal_transaksi' => 'required|date',
-            'status' => 'required|in:Belum Bayar,Lunas'
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            $produkLama = $transaksi->produk;
-            $produkBaru = Produk::findOrFail($request->produk_id);
-
-            $produkLama->stok += $transaksi->qty;
-            $produkLama->save();
-
-            if ($produkBaru->stok < $request->qty) {
-                throw new \Exception('Stok tidak cukup!');
+                $total += $subtotal;
             }
 
-            $transaksi->update([
-                'konsumen_id' => $request->konsumen_id,
-                'produk_id' => $request->produk_id,
-                'qty' => $request->qty,
-                'harga_satuan' => $produkBaru->harga,
-                'total' => $produkBaru->harga * $request->qty,
-                'tanggal_transaksi' => $request->tanggal_transaksi,
-                'status' => $request->status
-            ]);
+            $transaksi->update(['total' => $total]);
 
-            $produkBaru->stok -= $request->qty;
-            $produkBaru->save();
+            // 🔥 AUTO FOLLOW UP (ANTI DOUBLE)
+            FollowUp::updateOrCreate(
+                ['transaksi_id' => $transaksi->id],
+                [
+                    'konsumen_id' => $transaksi->konsumen_id,
+                    'user_id' => Auth::id(),
+                    'status' => 'Belum Dihubungi',
+                    'catatan' => 'Follow-up otomatis',
+                    'follow_up_date' => now()
+                ]
+            );
 
             $this->syncStatusKonsumen($request->konsumen_id);
 
             DB::commit();
 
-            return redirect()->route('transaksi.index')
-                ->with('success','Transaksi berhasil diupdate');
+            return view('transaksi.success', compact('transaksi'));
 
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->with('error',$e->getMessage());
+            return back()->withInput()->with('error', $e->getMessage());
         }
+    }
+
+    // ===============================
+    // SHOW
+    // ===============================
+    public function show($id)
+    {
+        $transaksi = Transaksi::with([
+            'konsumen',
+            'details.produk',
+            'followUps.user'
+        ])->findOrFail($id);
+
+        return view('transaksi.show', compact('transaksi'));
     }
 
     // ===============================
@@ -263,61 +227,117 @@ class TransaksiController extends Controller
         DB::beginTransaction();
 
         try {
-            $produk = $transaksi->produk;
-
-            $produk->stok += $transaksi->qty;
-            $produk->save();
+            foreach ($transaksi->details as $d) {
+                $produk = $d->produk;
+                $produk->stok += $d->qty;
+                $produk->save();
+            }
 
             $konsumen_id = $transaksi->konsumen_id;
-
             $transaksi->delete();
 
             $this->syncStatusKonsumen($konsumen_id);
 
             DB::commit();
 
-            return redirect()->route('transaksi.index')
-                ->with('success','Transaksi dihapus');
+            return redirect()->route('transaksi.index')->with('success', 'Transaksi dihapus');
 
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->with('error',$e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
 
     // ===============================
-    // BAYAR
+    // EDIT
     // ===============================
-    public function bayar(Transaksi $transaksi)
+    public function edit($id)
     {
+        $transaksi = Transaksi::with('details')->findOrFail($id);
+
+        return view('transaksi.edit', [
+            'transaksi' => $transaksi,
+            'konsumens' => Konsumen::all(),
+            'produks' => Produk::all()
+        ]);
+    }
+
+    // ===============================
+    // UPDATE (🔥 FIX SYNC)
+    // ===============================
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'konsumen_id' => 'required|exists:konsumens,id',
+            'produk_id' => 'required|array',
+            'produk_id.*' => 'exists:produks,id',
+            'qty' => 'required|array',
+            'qty.*' => 'integer|min:1',
+            'tanggal_transaksi' => 'required|date',
+            'status' => 'required|in:Belum Bayar,Lunas'
+        ]);
+
         DB::beginTransaction();
 
         try {
-            $transaksi->status = 'Lunas';
-            $transaksi->save();
+            $transaksi = Transaksi::with('details')->findOrFail($id);
 
-            $this->syncStatusKonsumen($transaksi->konsumen_id);
+            // balik stok
+            foreach ($transaksi->details as $d) {
+                $d->produk->increment('stok', $d->qty);
+            }
+
+            // hapus detail lama
+            DetailTransaksi::where('transaksi_id', $transaksi->id)->delete();
+
+            $total = 0;
+
+            foreach ($request->produk_id as $i => $produk_id) {
+                $produk = Produk::findOrFail($produk_id);
+                $qty = $request->qty[$i];
+
+                if ($produk->stok < $qty) {
+                    throw new \Exception("Stok {$produk->nama} tidak cukup!");
+                }
+
+                $subtotal = $qty * $produk->harga;
+
+               DetailTransaksi::create([
+                'transaksi_id' => $transaksi->id,
+                'produk_id' => $produk_id,
+                'qty' => $qty,
+                'harga' => $produk->harga, // 🔥 WAJIB TAMBAH
+                'harga_satuan' => $produk->harga,
+                'subtotal' => $subtotal
+            ]);
+
+                $produk->decrement('stok', $qty);
+                $total += $subtotal;
+            }
+
+            $transaksi->update([
+                'konsumen_id' => $request->konsumen_id,
+                'tanggal_transaksi' => $request->tanggal_transaksi,
+                'status' => $request->status,
+                'total' => $total
+            ]);
+
+            // 🔥 SYNC FOLLOW UP
+            FollowUp::updateOrCreate(
+                ['transaksi_id' => $transaksi->id],
+                [
+                    'konsumen_id' => $request->konsumen_id
+                ]
+            );
 
             DB::commit();
 
-            return redirect()->route('transaksi.index')
-                ->with('success','Transaksi berhasil dibayar');
+            return redirect()->route('transaksi.show', $transaksi->id)
+                ->with('success', 'Transaksi berhasil diupdate');
 
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->with('error',$e->getMessage());
+            return back()->withInput()->with('error', $e->getMessage());
         }
-    }
-
-    // ===============================
-    // DETAIL
-    // ===============================
-    public function show($id)
-    {
-        // 🔥 TAMBAHIN FOLLOW UP DI SINI
-        $transaksi = Transaksi::with(['konsumen', 'produk', 'followUps.user'])
-            ->findOrFail($id);
-
-        return view('transaksi.show', compact('transaksi'));
     }
 }

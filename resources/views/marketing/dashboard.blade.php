@@ -185,7 +185,19 @@
                                         <td>{{ $k->no_hp }}</td>
 
                                         <td>
-                                            {{ $k->transaksis->first()?->produk?->nama ?? '-' }}
+                                            @php
+                                                $transaksi = $k->transaksis->first();
+                                            @endphp
+
+                                            @if($transaksi && $transaksi->details->count())
+                                                <ul class="mb-0 ps-3" style="font-size: 13px;">
+                                                    @foreach($transaksi->details as $d)
+                                                        <li>{{ $d->produk->nama ?? '-' }}</li>
+                                                    @endforeach
+                                                </ul>
+                                            @else
+                                                -
+                                            @endif
                                         </td>
 
                                         <td class="text-success fw-bold">
@@ -247,7 +259,19 @@
                                             <td class="wrap-text">{{ $k->no_hp }}</td>
 
                                             <td class="wrap-text">
-                                                {{ $k->transaksis->first()?->produk?->nama ?? '-' }}
+                                                @php
+                                                    $transaksi = $k->transaksis->first();
+                                                @endphp
+
+                                                @if($transaksi && $transaksi->details->count())
+                                                    <ul class="mb-0 ps-3" style="font-size: 13px;">
+                                                        @foreach($transaksi->details as $d)
+                                                            <li>{{ $d->produk->nama ?? '-' }}</li>
+                                                        @endforeach
+                                                    </ul>
+                                                @else
+                                                    -
+                                                @endif
                                             </td>
 
                                             <td>
@@ -310,8 +334,9 @@
                                         @endphp
 
                                         <tr>
-                                            <td>{{ $d->produk->nama ?? '-' }}</td>
-
+                                            <td style="max-width:250px;">
+                                                {{ $d->produk->nama ?? '-' }}
+                                            </td>
                                             <td>{{ $d->target_qty }}</td>
 
                                             <td>
@@ -361,10 +386,10 @@
 
             <div class="card-body text-center">
 
-                <h5 class="fw-bold mb-3">💰 Total Omset</h5>
+                <h5 class="fw-bold mb-3">💰 Target Omset</h5>
 
                 <h2 class="fw-bold text-success">
-                    Rp {{ number_format($totalOmset, 0, ',', '.') }}
+                    Rp {{ number_format($targetOmset, 0, ',', '.') }}
                 </h2>
 
                 <p class="text-muted mb-0">
@@ -410,8 +435,13 @@
 
                 <div class="card">
 
+                    <div class="badge bg-white shadow-sm text-dark p-2 px-3 rounded-pill border">
+                        <i class="fas fa-calendar-alt text-primary me-2"></i> {{ date('l, d M Y') }}
+                        jam:{{ date('H:i') }}
+                    </div>
+
                     <div class="card-header">
-                        <h5 class="fw-bold">📅 Follow-Up Hari Ini</h5>
+                        <h5 class="fw-bold">📞 Follow Up Hari Ini</h5>
                     </div>
 
                     <div class="card-body p-0">

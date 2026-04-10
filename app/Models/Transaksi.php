@@ -11,28 +11,18 @@ class Transaksi extends Model
 
     protected $fillable = [
         'konsumen_id',
-        'produk_id',
-        'qty',
-        'harga_satuan',
         'total',
         'tanggal_transaksi',
         'status'
     ];
 
-    // 🔥 TARUH DI SINI
     protected static function booted()
     {
+        // total otomatis dihitung lewat store/update di controller, jadi ini optional
         static::creating(function ($transaksi) {
-            $transaksi->total = $transaksi->qty * $transaksi->harga_satuan;
-
-            // default status kalau kosong
             if (!$transaksi->status) {
                 $transaksi->status = self::STATUS_BELUM;
             }
-        });
-
-        static::updating(function ($transaksi) {
-            $transaksi->total = $transaksi->qty * $transaksi->harga_satuan;
         });
     }
 
@@ -41,12 +31,27 @@ class Transaksi extends Model
         return $this->belongsTo(Konsumen::class);
     }
 
-    public function produk()
+    public function details()
     {
-        return $this->belongsTo(Produk::class);
+        return $this->hasMany(DetailTransaksi::class, 'transaksi_id');
     }
-        public function followUps()
+
+    // akses langsung ke produk lewat details
+    public function produks()
+    {
+        return $this->hasManyThrough(
+            Produk::class,
+            DetailTransaksi::class,
+            'transaksi_id', // FK detail ke transaksi
+            'id',           // PK produk
+            'id',           // PK transaksi
+            'produk_id'     // FK detail ke produk
+        );
+    }
+
+    public function followUps()
     {
         return $this->hasMany(FollowUp::class);
     }
+
 }

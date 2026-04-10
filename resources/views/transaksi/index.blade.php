@@ -21,12 +21,11 @@
 
     <!-- STATISTIK -->
     <div class="row mb-4">
-
         <div class="col-md-4">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <h6 class="text-muted">Total Transaksi</h6>
-                    <h3 id="totalTransaksi">{{ count($transaksis) }}</h3>
+                    <h3 id="totalTransaksi">{{ $transaksis->count() }}</h3>
                 </div>
             </div>
         </div>
@@ -50,19 +49,17 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <!-- FILTER -->
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body bg-light">
-
             <div class="row g-3 align-items-end">
 
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">🔎 Cari</label>
                     <input type="text" id="searchTransaksi" class="form-control"
-                        placeholder="Nama / Produk / No HP">
+                        placeholder="Nama Konsumen / Produk / No HP">
                 </div>
 
                 <div class="col-md-2">
@@ -89,14 +86,13 @@
                 <div class="col-md-2">
                     <label class="form-label invisible">Export</label>
                     <a href="#"
-                onclick="exportData()"
-                class="btn btn-success w-100">
-                📥 Export
-                </a>
+                        onclick="exportData()"
+                        class="btn btn-success w-100">
+                        📥 Export
+                    </a>
                 </div>
 
             </div>
-
         </div>
     </div>
 
@@ -123,17 +119,22 @@
 
                     <tbody>
                         @foreach($transaksis as $t)
-                        <tr
-                            data-tanggal="{{ \Carbon\Carbon::parse($t->tanggal_transaksi)->format('Y-m-d') }}"
-                            data-total="{{ $t->total }}"
-                        >
+                        <tr data-tanggal="{{ \Carbon\Carbon::parse($t->tanggal_transaksi)->format('Y-m-d') }}" data-total="{{ $t->total }}">
+                            <td>{{ $t->konsumen?->nama ?? '-' }}</td>
+                            <td>{{ $t->konsumen?->no_hp ?? '-' }}</td>
 
-                            <td>{{ $t->konsumen->nama }}</td>
-                            <td>{{ $t->konsumen->no_hp }}</td>
-                            <td>{{ $t->produk->nama }}</td>
-                            <td>{{ $t->qty }}</td>
+                            <td>
+                                {{ $t->details->pluck('produk.nama')->join(', ') }}
+                            </td>
 
-                            <td>Rp {{ number_format($t->harga_satuan,0,',','.') }}</td>
+                            <td>
+                                {{ $t->details->pluck('qty')->join(', ') }}
+                            </td>
+
+                            <td>
+                                {{ $t->details->pluck('harga_satuan')->map(fn($h)=> 'Rp '.number_format($h,0,',','.'))->join(', ') }}
+                            </td>
+
                             <td>Rp {{ number_format($t->total,0,',','.') }}</td>
 
                             <td>{{ \Carbon\Carbon::parse($t->tanggal_transaksi)->format('Y-m-d') }}</td>
@@ -147,13 +148,15 @@
                             </td>
 
                             <td>
-                                <div class="d-flex gap-2"> <!-- Invoice -->
-                                    <a href="{{ route('transaksi.invoice', $t->id) }}" class="btn btn-sm btn-primary" title="Invoice"> 📄 </a>
-                                    <!-- Edit -->
-                                    <a href="{{ route('transaksi.edit', $t->id) }}" class="btn btn-sm btn-warning" title="Edit"> ✏️ </a>
-                                    <!-- Delete -->
-                                    <form action="{{ route('transaksi.destroy', $t->id) }}" method="POST" onsubmit="return confirm('Yakin hapus data ini?')"> @csrf @method('DELETE')
-                                         <button type="submit" class="btn btn-sm btn-danger" title="Hapus"> 🗑 </button> </form> </div> </td>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ route('transaksi.invoice', $t->id) }}" class="btn btn-sm btn-primary" title="Invoice">📄</a>
+                                    <a href="{{ route('transaksi.edit', $t->id) }}" class="btn btn-sm btn-warning" title="Edit">✏️</a>
+                                    <form action="{{ route('transaksi.destroy', $t->id) }}" method="POST" onsubmit="return confirm('Yakin hapus data ini?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Hapus">🗑</button>
+                                    </form>
+                                </div>
+                            </td>
 
                         </tr>
                         @endforeach
@@ -165,7 +168,7 @@
         </div>
     </div>
 
-    <!-- 🔥 PRODUK TERLARIS (BALIKIN) -->
+    <!-- PRODUK TERLARIS -->
     <div class="card shadow-sm border-0">
         <div class="card-header bg-light">
             <strong>🔥 Produk Terlaris</strong>
@@ -173,9 +176,7 @@
 
         <div class="card-body">
             <div class="table-responsive">
-
                 <table class="table table-striped">
-
                     <thead class="table-secondary">
                         <tr>
                             <th>Produk</th>
@@ -201,7 +202,6 @@
                     </tbody>
 
                 </table>
-
             </div>
         </div>
     </div>
@@ -209,7 +209,6 @@
 </div>
 
 <script>
-
 let searchInput = document.getElementById("searchTransaksi")
 let filterTanggal = document.getElementById("filterTanggal")
 let filterStatus = document.getElementById("filterStatus")
@@ -219,24 +218,20 @@ let totalTransaksi = document.getElementById("totalTransaksi")
 let totalOmzet = document.getElementById("totalOmzet")
 
 function filterTable() {
-
     let keyword = searchInput.value.toLowerCase()
     let tanggal = filterTanggal.value
     let status = filterStatus.value
 
     let rows = document.querySelectorAll("#tableTransaksi tbody tr")
-
     let total = 0
     let count = 0
-
     let today = new Date()
     let todayStr = today.toISOString().split('T')[0]
 
     rows.forEach(function(row){
-
         let text = row.innerText.toLowerCase()
         let rowTanggal = row.getAttribute("data-tanggal")
-        let rowTotal = parseInt(row.getAttribute("data-total"))
+        let rowTotal = parseFloat(row.getAttribute("data-total"))
 
         let matchSearch = text.includes(keyword)
         let matchTanggal = !tanggal || rowTanggal === tanggal
@@ -245,16 +240,14 @@ function filterTable() {
         if(status === "hari"){
             matchStatus = rowTanggal === todayStr
         }
-
         if(status === "minggu"){
             let d = new Date(rowTanggal)
             let diff = (today - d) / (1000*60*60*24)
             matchStatus = diff <= 7
         }
-
         if(status === "bulan"){
             let d = new Date(rowTanggal)
-            matchStatus = d.getMonth() === today.getMonth()
+            matchStatus = d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()
         }
 
         if(matchSearch && matchTanggal && matchStatus){
@@ -264,7 +257,6 @@ function filterTable() {
         } else {
             row.style.display = "none"
         }
-
     })
 
     totalTransaksi.innerText = count
@@ -286,18 +278,18 @@ resetBtn.addEventListener("click", function(){
 filterTable()
 
 function exportData() {
-
     let tanggal = document.getElementById('filterTanggal').value
+    let search = document.getElementById('searchTransaksi').value
+    let url = "{{ route('export.transaksi') }}?1=1"
 
-    let url = "{{ route('export.transaksi') }}"
-
-    if (tanggal) {
-        url += "?start_date=" + tanggal + "&end_date=" + tanggal
+    if(tanggal){
+        url += "&start_date=" + tanggal + "&end_date=" + tanggal
     }
-
+    if(search){
+        url += "&search=" + encodeURIComponent(search)
+    }
     window.location.href = url
 }
-
 </script>
 
 @endsection

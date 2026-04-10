@@ -32,15 +32,11 @@ class User extends Authenticatable
     /**
      * Cast tipe data
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_active' => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_active' => 'boolean',
+    ];
 
-    // Relasi ke Target
-    
+    // Relasi ke Target (opsional nanti)
 }

@@ -10,17 +10,20 @@ return new class extends Migration
     {
         Schema::create('transaksis', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('konsumen_id')->constrained()->onDelete('cascade');
-            $table->foreignId('produk_id')->constrained()->onDelete('cascade');
-            $table->integer('qty')->default(1);
-            $table->bigInteger('harga_satuan');
-            $table->bigInteger('total')->nullable();
 
-            // Tanggal transaksi
+            $table->foreignId('konsumen_id')->constrained()->onDelete('cascade');
+
+            // ❌ HAPUS INI
+            // $table->foreignId('produk_id')->constrained()->onDelete('cascade');
+            // $table->integer('qty')->default(1);
+            // $table->bigInteger('harga_satuan');
+
+            // ✅ GANTI JADI
+            $table->bigInteger('total')->default(0);
+
             $table->date('tanggal_transaksi');
 
-            // Jika ingin tanggal + waktu
-            // $table->dateTime('tanggal_transaksi');
+            $table->string('status')->default('Belum Bayar');
 
             $table->timestamps();
         });

@@ -18,7 +18,7 @@ return new class extends Migration
 
                         $table->string('nama');
 
-                        $table->string('no_hp');
+                        $table->string('no_hp')->nullable();
 
                         $table->string('email')->nullable();
 

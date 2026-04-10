@@ -29,7 +29,7 @@
             </p>
 
             <div class="mt-3">
-                <span id="countdown">10</span> detik menuju detail transaksi
+                <span id="countdown">5</span> detik menuju detail transaksi
             </div>
 
         </div>
@@ -38,9 +38,7 @@
 
 </div>
 
-
 <style>
-
 .success-checkmark{
     width:80px;
     height:80px;
@@ -85,38 +83,27 @@
     border-radius:50%;
     border:4px solid rgba(40,167,69,.4);
 }
-
 </style>
-
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 <script>
-
 confetti({
     particleCount:150,
     spread:90,
     origin:{ y:0.6 }
 });
 
-let time = 10;
-
+let time = 5;
 let countdown = setInterval(function(){
-
     time--;
-
     document.getElementById('countdown').innerText = time;
 
     if(time <= 0){
-
         clearInterval(countdown);
-
-        window.location.href = "{{ route('transaksi.show',$transaksi->id) }}";
-
+        window.location.href = "{{ route('transaksi.show', $transaksi->id) }}";
     }
-
-},500);
-
+}, 1000);
 </script>
 
 @endsection

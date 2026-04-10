@@ -12,7 +12,7 @@
 
         <div class="card-body">
 
-            <!-- Error -->
+            {{-- ERROR --}}
             @if($errors->any())
                 <div class="alert alert-danger">
                     <ul class="mb-0">
@@ -23,17 +23,16 @@
                 </div>
             @endif
 
-            <!-- FORM -->
+            {{-- FORM --}}
             <form action="{{ route('followups.update', $followUp->id) }}" method="POST">
                 @csrf
                 @method('PUT')
 
-                <!-- Konsumen -->
+                {{-- KONSUMEN --}}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Konsumen</label>
                     <select name="konsumen_id" class="form-select" required>
-                        <option value="">-- Pilih Konsumen --</option>
-
+                        <option value="" disabled>-- Pilih Konsumen --</option>
                         @foreach($konsumens as $k)
                             <option value="{{ $k->id }}"
                                 {{ old('konsumen_id', $followUp->konsumen_id) == $k->id ? 'selected' : '' }}>
@@ -43,60 +42,66 @@
                     </select>
                 </div>
 
-                <!-- 🔥 TRANSAKSI -->
+                {{-- TRANSAKSI --}}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Transaksi / Invoice</label>
                     <select name="transaksi_id" id="transaksi_select" class="form-select" required>
-                        <option value="">-- Pilih Transaksi --</option>
+                        <option value="" disabled>-- Pilih Transaksi --</option>
 
                         @foreach($transaksis as $trx)
                             <option value="{{ $trx->id }}"
-                                data-total="{{ $trx->total }}"
+                                data-total="{{ $trx->total ?? 0 }}"
+                                data-produk='@json(
+                                    $trx->details->map(function($d){
+                                        return [
+                                            "nama" => $d->produk->nama ?? "-",
+                                            "qty" => $d->qty ?? 0
+                                        ];
+                                    })
+                                )'
                                 {{ old('transaksi_id', $followUp->transaksi_id) == $trx->id ? 'selected' : '' }}>
-                                INV-{{ $trx->id }} | {{ $trx->konsumen->nama ?? '-' }} | Rp {{ number_format($trx->total) }}
+
+                                INV-{{ $trx->id }} |
+                                {{ $trx->konsumen->nama ?? '-' }} |
+                                {{ $trx->details->count() }} barang |
+                                Rp {{ number_format($trx->total ?? 0) }}
+
                             </option>
                         @endforeach
                     </select>
                 </div>
 
-                <!-- 🔥 TOTAL OTOMATIS -->
+                {{-- PRODUK --}}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Produk Dibeli</label>
+                    <div id="produk_list" class="form-control bg-light" style="min-height:80px"></div>
+                </div>
+
+                {{-- TOTAL --}}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Total Transaksi</label>
                     <input type="text" id="total_transaksi" class="form-control bg-light" readonly>
                 </div>
 
-                <!-- Status -->
+                {{-- STATUS --}}
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Status Follow Up</label>
+                    <label class="form-label fw-semibold">Status</label>
                     <select name="status" class="form-select" required>
-
-                        <option value="Belum Dihubungi"
-                            {{ old('status', $followUp->status) == 'Belum Dihubungi' ? 'selected' : '' }}>
-                            🔴 Belum Dihubungi
-                        </option>
-
-                        <option value="Belum Bayar"
-                            {{ old('status', $followUp->status) == 'Belum Bayar' ? 'selected' : '' }}>
-                            🟡 Belum Bayar
-                        </option>
-
-                        <option value="Sudah Bayar"
-                            {{ old('status', $followUp->status) == 'Sudah Bayar' ? 'selected' : '' }}>
-                            🟢 Sudah Bayar
-                        </option>
-
+                        <option value="Belum Dihubungi" {{ $followUp->status == 'Belum Dihubungi' ? 'selected' : '' }}>🔴 Belum Dihubungi</option>
+                        <option value="Belum Bayar" {{ $followUp->status == 'Belum Bayar' ? 'selected' : '' }}>🟡 Belum Bayar</option>
+                        <option value="Sudah Bayar" {{ $followUp->status == 'Sudah Bayar' ? 'selected' : '' }}>🟢 Sudah Bayar</option>
                     </select>
                 </div>
 
-                <!-- Catatan -->
+                {{-- CATATAN --}}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Catatan</label>
                     <textarea name="catatan" class="form-control" rows="3">{{ old('catatan', $followUp->catatan) }}</textarea>
                 </div>
 
-                <!-- Tanggal -->
+                {{-- TANGGAL --}}
                 <div class="mb-4">
-                    <label class="form-label fw-semibold">Tanggal Follow Up</label>
+                    <label class="form-label fw-semibold">Tanggal Follow-Up</label>
                     <input type="datetime-local"
                         name="follow_up_date"
                         class="form-control"
@@ -105,15 +110,10 @@
 
                 <hr>
 
-                <!-- Tombol -->
+                {{-- BUTTON --}}
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-success px-4">
-                        💾 Update
-                    </button>
-
-                    <a href="{{ route('followups.index') }}" class="btn btn-outline-secondary">
-                        ⬅️ Kembali
-                    </a>
+                    <button type="submit" class="btn btn-success px-4">💾 Update</button>
+                    <a href="{{ route('followups.index') }}" class="btn btn-outline-secondary">⬅️ Kembali</a>
                 </div>
 
             </form>
@@ -123,26 +123,51 @@
 
 </div>
 
-<!-- 🔥 SCRIPT AUTO TOTAL -->
+{{-- SCRIPT --}}
 <script>
-    const transaksiSelect = document.getElementById('transaksi_select');
-    const totalField = document.getElementById('total_transaksi');
+const transaksiSelect = document.getElementById('transaksi_select');
+const totalField = document.getElementById('total_transaksi');
+const produkList = document.getElementById('produk_list');
 
-    function updateTotal() {
-        let selected = transaksiSelect.options[transaksiSelect.selectedIndex];
-        let total = selected.getAttribute('data-total');
+function updateData() {
+    let selected = transaksiSelect.options[transaksiSelect.selectedIndex];
 
-        if (total) {
-            totalField.value = 'Rp ' + parseInt(total).toLocaleString('id-ID');
-        } else {
-            totalField.value = '';
-        }
+    if (!selected || selected.value === "") {
+        produkList.innerHTML = '<i class="text-muted">Pilih transaksi dulu</i>';
+        totalField.value = '';
+        return;
     }
 
-    transaksiSelect.addEventListener('change', updateTotal);
+    let total = selected.getAttribute('data-total') || 0;
+    let produkData = selected.getAttribute('data-produk');
 
-    // 🔥 load pertama (edit mode)
-    window.addEventListener('load', updateTotal);
+    let produk = [];
+    try {
+        produk = JSON.parse(produkData);
+    } catch (e) {
+        produk = [];
+    }
+
+    // tampil produk
+    if (produk.length > 0) {
+        let html = '';
+        produk.forEach(p => {
+            html += `<span class="badge bg-primary me-1">${p.nama}</span> x${p.qty}<br>`;
+        });
+        produkList.innerHTML = html;
+    } else {
+        produkList.innerHTML = '<i class="text-muted">Tidak ada produk</i>';
+    }
+
+    // tampil total
+    totalField.value = 'Rp ' + parseInt(total).toLocaleString('id-ID');
+}
+
+// event change
+transaksiSelect.addEventListener('change', updateData);
+
+// auto load saat edit
+document.addEventListener('DOMContentLoaded', updateData);
 </script>
 
 @endsection
