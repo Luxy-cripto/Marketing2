@@ -1,128 +1,169 @@
 @extends('layouts.admin2')
 
 @section('content')
-<div class="container py-4">
+    <div class="container py-4">
 
-    <!-- HEADER -->
-    <div class="mb-4">
-        <h4 class="fw-bold">✏️ Edit Konsumen</h4>
+        <!-- HEADER -->
+        <div class="mb-4">
+            <h4 class="fw-bold">✏️ Edit Konsumen</h4>
+        </div>
+
+        <!-- ERROR ALERT -->
+        @if($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach($errors->all() as $err)
+                        <li>{{ $err }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+
+                <!-- FORM EDIT -->
+                <form action="{{ route('konsumen.update', $konsumen->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+
+                    <!-- NAMA -->
+                    <div class="mb-3">
+                        <label class="form-label">Nama</label>
+                        <input type="text" name="nama" class="form-control" value="{{ old('nama', $konsumen->nama) }}"
+                            required>
+                    </div>
+
+                    <!-- NO HP -->
+                    <div class="mb-3">
+                        <label class="form-label">No HP</label>
+                        <input type="text" name="no_hp" class="form-control" value="{{ old('no_hp', $konsumen->no_hp) }}"
+                            required>
+                    </div>
+
+                    <!-- EMAIL -->
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" value="{{ old('email', $konsumen->email) }}">
+                    </div>
+
+                    <!-- ALAMAT -->
+                    <div class="mb-3">
+                        <label class="form-label">Alamat</label>
+                        <textarea name="alamat" class="form-control"
+                            rows="2">{{ old('alamat', $konsumen->alamat) }}</textarea>
+                    </div>
+
+                    <!-- SUMBER LEAD -->
+                    <div class="mb-3">
+                        <label class="form-label">Sumber Lead</label>
+                        <select name="sumber_lead" class="form-select">
+                            <option value="">Pilih Sumber Lead</option>
+                            @foreach(['Website', 'Instagram', 'Facebook', 'WhatsApp'] as $source)
+                                <option value="{{ $source }}" {{ old('sumber_lead', $konsumen->sumber_lead) == $source ? 'selected' : '' }}>
+                                    {{ $source }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- STATUS -->
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            @foreach(['Prospek', 'Deal', 'Tidak Tertarik'] as $status)
+                                <option value="{{ $status }}" {{ old('status', $konsumen->status) == $status ? 'selected' : '' }}>
+                                    {{ $status }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- 🔥 PRODUK MODERN (EDIT VERSION) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Produk Diminati</label>
+
+                        <div class="row">
+                            @foreach($produks as $p)
+                                @php
+                                    $selectedProduk = collect(old('produk_id', $konsumen->produks->pluck('id')));
+                                    $isSelected = $selectedProduk->contains($p->id);
+                                @endphp
+
+                                <div class="col-md-4 mb-3">
+
+                                    <div class="card produk-card h-100 {{ $isSelected ? 'active' : '' }}"
+                                        data-id="{{ $p->id }}">
+
+                                        <div class="card-body text-center">
+                                            <h6 class="fw-bold">{{ $p->nama }}</h6>
+                                            <p class="text-muted mb-0">
+                                                Rp {{ number_format($p->harga) }}
+                                            </p>
+                                        </div>
+
+                                    </div>
+
+                                    <!-- Hidden checkbox -->
+                                    <input type="checkbox" name="produk_id[]" value="{{ $p->id }}"
+                                        class="d-none produk-checkbox" {{ $isSelected ? 'checked' : '' }}>
+
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <small class="text-muted">Klik produk untuk memilih</small>
+                    </div>
+
+                    <!-- BUTTON -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">💾 Update</button>
+                        <a href="{{ route('konsumen.index') }}" class="btn btn-secondary">Batal</a>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
     </div>
 
-    <!-- ERROR ALERT -->
-    @if($errors->any())
-        <div class="alert alert-danger">
-            <ul class="mb-0">
-                @foreach($errors->all() as $err)
-                    <li>{{ $err }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    <style>
+        .produk-card {
+            cursor: pointer;
+            border-radius: 14px;
+            transition: all 0.25s ease;
+            border: 2px solid transparent;
+        }
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
+        .produk-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
 
-            <!-- FORM EDIT -->
-            <form action="{{ route('konsumen.update', $konsumen->id) }}" method="POST">
-                @csrf
-                @method('PUT')
+        .produk-card.active {
+            border: 2px solid #0d6efd;
+            background: #eff6ff;
+        }
+    </style>
 
-                <!-- NAMA -->
-                <div class="mb-3">
-                    <label class="form-label">Nama</label>
-                    <input type="text" name="nama" class="form-control"
-                        value="{{ old('nama', $konsumen->nama) }}" required>
-                </div>
+    <!-- 🔥 SELECT2 -->
 
-                <!-- NO HP -->
-                <div class="mb-3">
-                    <label class="form-label">No HP</label>
-                    <input type="text" name="no_hp" class="form-control"
-                        value="{{ old('no_hp', $konsumen->no_hp) }}" required>
-                </div>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 
-                <!-- EMAIL -->
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control"
-                        value="{{ old('email', $konsumen->email) }}">
-                </div>
+    <script>
+        document.querySelectorAll('.produk-card').forEach(card => {
 
-                <!-- ALAMAT -->
-                <div class="mb-3">
-                    <label class="form-label">Alamat</label>
-                    <textarea name="alamat" class="form-control" rows="2">{{ old('alamat', $konsumen->alamat) }}</textarea>
-                </div>
+            card.addEventListener('click', function () {
 
-                <!-- SUMBER LEAD -->
-                <div class="mb-3">
-                    <label class="form-label">Sumber Lead</label>
-                    <select name="sumber_lead" class="form-select">
-                        <option value="">Pilih Sumber Lead</option>
-                        @foreach(['Website','Instagram','Facebook','WhatsApp'] as $source)
-                            <option value="{{ $source }}"
-                                {{ old('sumber_lead', $konsumen->sumber_lead) == $source ? 'selected' : '' }}>
-                                {{ $source }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                let checkbox = card.parentElement.querySelector('.produk-checkbox');
 
-                <!-- STATUS -->
-                <div class="mb-3">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select">
-                        @foreach(['Prospek','Deal','Tidak Tertarik'] as $status)
-                            <option value="{{ $status }}"
-                                {{ old('status', $konsumen->status) == $status ? 'selected' : '' }}>
-                                {{ $status }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                card.classList.toggle('active');
+                checkbox.checked = !checkbox.checked;
 
-                <!-- 🔥 PRODUK MULTIPLE -->
-                <div class="mb-3">
-                    <label class="form-label">Produk Diminati</label>
-                    <select name="produk_id[]" class="form-select select2" multiple>
+            });
 
-                        @foreach($produks as $p)
-                            <option value="{{ $p->id }}"
-                                @if(collect(old('produk_id', $konsumen->produks->pluck('id')))->contains($p->id)) selected @endif>
-                                {{ $p->nama }} - Rp {{ number_format($p->harga) }}
-                            </option>
-                        @endforeach
-
-                    </select>
-                    <small class="text-muted">Bisa pilih lebih dari satu produk</small>
-                </div>
-
-                <!-- BUTTON -->
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">💾 Update</button>
-                    <a href="{{ route('konsumen.index') }}" class="btn btn-secondary">Batal</a>
-                </div>
-
-            </form>
-
-        </div>
-    </div>
-
-</div>
-
-<!-- 🔥 SELECT2 -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
-
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
-
-<script>
-    $(document).ready(function() {
-        $('.select2').select2({
-            placeholder: "Pilih produk",
-            width: '100%'
         });
-    });
-</script>
+    </script>
 
 @endsection

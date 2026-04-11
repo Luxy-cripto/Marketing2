@@ -120,36 +120,6 @@
             </div>
 
         </div>
-
-
-        <div class="row mt-3">
-
-            <div class="col-md-12">
-
-                <div class="card shadow-sm">
-
-                    <div class="card-body">
-
-                        <h5 class="fw-bold">📋 Keterangan</h5>
-
-                        <ul>
-                            <li><strong>Target Lead:</strong> Jumlah lead yang ditargetkan untuk bulan ini.</li>
-                            <li><strong>Lead Masuk:</strong> Jumlah lead yang berhasil masuk ke sistem.</li>
-                            <li><strong>Deal:</strong> Jumlah lead yang berhasil dikonversi menjadi deal.</li>
-                            <li><strong>Tidak Tertarik:</strong> Jumlah lead yang menyatakan tidak tertarik.</li>
-                            <li><strong>Closing:</strong> Jumlah deal yang berhasil ditutup dengan sukses.</li>
-                            <li><strong>Total Omset:</strong> Total pendapatan yang dihasilkan dari deal yang berhasil
-                                ditutup.</li>
-                        </ul>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
         <div class="row mt-3">
 
             <!-- DEAL SUDAH BAYAR -->
@@ -496,7 +466,32 @@
 
         </div>
 
+        <div class="row mt-3">
 
+            <div class="col-md-12">
+
+                <div class="card shadow-sm">
+
+                    <div class="card-body">
+
+                        <h5 class="fw-bold">📋 Keterangan</h5>
+
+                        <ul>
+                            <li><strong>Target Lead:</strong> Jumlah lead yang ditargetkan untuk bulan ini.</li>
+                            <li><strong>Lead Masuk:</strong> Jumlah lead yang berhasil masuk ke sistem.</li>
+                            <li><strong>Deal:</strong> Jumlah lead yang berhasil dikonversi menjadi deal.</li>
+                            <li><strong>Tidak Tertarik:</strong> Jumlah lead yang menyatakan tidak tertarik.</li>
+                            <li><strong>Closing:</strong> Jumlah deal yang berhasil ditutup dengan sukses.</li>
+                            <li><strong>Total Omset:</strong> Total pendapatan yang dihasilkan dari deal yang berhasil  ditutup.</li>
+                        </ul>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
 
 
 
