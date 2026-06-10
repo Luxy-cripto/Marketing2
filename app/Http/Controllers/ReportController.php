@@ -12,7 +12,7 @@ class ReportController extends Controller
     public function index(Request $request)
     {
         // =========================
-        // FILTER TANGGAL (FIX)
+        // FILTER TANGGAL
         // =========================
         $start = $request->start_date
             ? Carbon::parse($request->start_date)->startOfDay()
@@ -25,29 +25,49 @@ class ReportController extends Controller
         // =========================
         // TOTAL TRANSAKSI
         // =========================
-        $totalTransaksi = Transaksi::whereBetween('created_at', [$start, $end])
-                            ->count();
+        $totalTransaksi = Transaksi::whereBetween(
+            'created_at',
+            [$start, $end]
+        )->count();
 
         // =========================
-        // TOTAL OMZET (FIX STATUS)
+        // TOTAL OMZET
         // =========================
-        $totalOmzet = Transaksi::whereBetween('created_at', [$start, $end])
-                        ->whereIn('status', [
-                            'success','berhasil','lunas','paid','selesai'
-                        ])
-                        ->sum('total');
+        $totalOmzet = Transaksi::whereBetween(
+            'created_at',
+            [$start, $end]
+        )
+        ->where('status', 'Lunas')
+        ->sum('total');
 
         // =========================
         // PRODUK TERLARIS
         // =========================
-        $produkTerlaris = DB::table('transaksis')
-            ->join('produks', 'transaksis.produk_id', '=', 'produks.id')
+        $produkTerlaris = DB::table('detail_transaksis')
+            ->join(
+                'produks',
+                'detail_transaksis.produk_id',
+                '=',
+                'produks.id'
+            )
+            ->join(
+                'transaksis',
+                'detail_transaksis.transaksi_id',
+                '=',
+                'transaksis.id'
+            )
             ->select(
                 'produks.nama',
-                DB::raw('COUNT(transaksis.id) as total')
+                DB::raw('COUNT(detail_transaksis.id) as total')
             )
-            ->whereBetween('transaksis.created_at', [$start, $end])
-            ->groupBy('produks.nama')
+            ->whereBetween(
+                'transaksis.created_at',
+                [$start, $end]
+            )
+            ->groupBy(
+                'produks.id',
+                'produks.nama'
+            )
             ->orderByDesc('total')
             ->limit(5)
             ->get();
@@ -55,11 +75,17 @@ class ReportController extends Controller
         // =========================
         // TRANSAKSI TERBARU
         // =========================
-        $transaksi = Transaksi::with('konsumen','produk')
-                        ->whereBetween('created_at', [$start, $end])
-                        ->latest()
-                        ->limit(10)
-                        ->get();
+        $transaksi = Transaksi::with([
+                'konsumen',
+                'produks'
+            ])
+            ->whereBetween(
+                'created_at',
+                [$start, $end]
+            )
+            ->latest()
+            ->limit(10)
+            ->get();
 
         return view('reports.index', compact(
             'totalTransaksi',

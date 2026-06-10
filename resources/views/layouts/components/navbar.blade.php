@@ -88,7 +88,7 @@
                         <div class="quick-actions-items">
                             <div class="row m-0">
 
-                                <a class="col-6 col-md-4 p-0" href="#">
+                                <a class="col-6 col-md-4 p-0" href="{{ route('calendar.index') }}">
                                     <div class="quick-actions-item">
                                         <div class="avatar-item bg-danger rounded-circle">
                                             <i class="far fa-calendar-alt"></i>

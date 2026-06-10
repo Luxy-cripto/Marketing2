@@ -72,5 +72,7 @@ WebFont.load({
 
 <script src="{{ asset('assets/js/kaiadmin.min.js') }}"></script>
 
+@yield('scripts')
+
 </body>
 </html>

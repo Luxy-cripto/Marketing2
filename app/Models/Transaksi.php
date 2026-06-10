@@ -54,4 +54,5 @@ class Transaksi extends Model
         return $this->hasMany(FollowUp::class);
     }
 
+
 }

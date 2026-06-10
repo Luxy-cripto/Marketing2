@@ -13,6 +13,8 @@ use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CalendarController;
+
 
 
 use App\Exports\KonsumenExport;
@@ -237,4 +239,19 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     });
+
+        /*
+    |--------------------------------------------------------------------------
+    | CALENDAR
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/calendar', [CalendarController::class,'index'])
+        ->name('calendar.index');
+
+    Route::get('/calendar/events', [CalendarController::class,'events']);
+
+    Route::post('/calendar/store', [CalendarController::class,'store']);
+
+    Route::delete('/calendar/delete/{id}', [CalendarController::class,'destroy']);
 });
