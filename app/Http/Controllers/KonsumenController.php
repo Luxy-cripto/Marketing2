@@ -54,38 +54,40 @@ class KonsumenController extends Controller
     // SIMPAN DATA
     // ==============================
     public function store(Request $request)
-    {
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'no_hp' => 'required|string|max:20',
-            'sumber_lead' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'alamat' => 'nullable|string',
-            'status' => 'nullable|in:Prospek,Deal,Tidak Tertarik',
+{
+    $request->validate([
+        'nama' => 'required|string|max:255',
+        'no_hp' => 'required|digits:12|unique:konsumens,no_hp',
+        'sumber_lead' => 'required|string|max:255',
+        'email' => 'nullable|email|max:255',
+        'alamat' => 'nullable|string',
+        'status' => 'nullable|in:Prospek,Deal,Tidak Tertarik',
 
-            // 🔥 MULTI PRODUK
-            'produk_id' => 'nullable|array',
-            'produk_id.*' => 'exists:produks,id',
-        ]);
+        'produk_id' => 'nullable|array',
+        'produk_id.*' => 'exists:produks,id',
+    ], [
+        'no_hp.required' => 'Nomor HP wajib diisi',
+        'no_hp.digits' => 'Nomor HP harus tepat 12 digit',
+        'no_hp.unique' => 'Nomor HP sudah terdaftar',
+    ]);
 
-        $konsumen = Konsumen::create([
-            'nama' => $request->nama,
-            'no_hp' => $request->no_hp,
-            'email' => $request->email,
-            'alamat' => $request->alamat,
-            'sumber_lead' => $request->sumber_lead,
-            'status' => $request->status ?? 'Prospek',
-            'user_id' => Auth::id(),
-        ]);
+    $konsumen = Konsumen::create([
+        'nama' => $request->nama,
+        'no_hp' => $request->no_hp,
+        'email' => $request->email,
+        'alamat' => $request->alamat,
+        'sumber_lead' => $request->sumber_lead,
+        'status' => $request->status ?? 'Prospek',
+        'user_id' => Auth::id(),
+    ]);
 
-        // 🔥 SIMPAN RELASI PRODUK
-        if ($request->produk_id) {
-            $konsumen->produks()->sync($request->produk_id);
-        }
-
-        return redirect()->route('konsumen.index')
-            ->with('success','Data konsumen berhasil ditambahkan');
+    if ($request->produk_id) {
+        $konsumen->produks()->sync($request->produk_id);
     }
+
+    return redirect()->route('konsumen.index')
+        ->with('success', 'Data konsumen berhasil ditambahkan');
+}
 
     // ==============================
     // FORM EDIT
@@ -106,42 +108,48 @@ class KonsumenController extends Controller
     // ==============================
     // UPDATE DATA
     // ==============================
-    public function update(Request $request, Konsumen $konsumen)
-    {
-        $user = Auth::user();
+   public function update(Request $request, Konsumen $konsumen)
+{
+    $user = Auth::user();
 
-        if ($user->role === 'marketing' && $konsumen->user_id !== $user->id) {
-            abort(403,'Tidak punya akses');
-        }
-
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'no_hp' => 'required|string|max:20',
-            'sumber_lead' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'alamat' => 'nullable|string',
-            'status' => 'nullable|in:Prospek,Deal,Tidak Tertarik',
-
-            // 🔥 MULTI PRODUK
-            'produk_id' => 'nullable|array',
-            'produk_id.*' => 'exists:produks,id',
-        ]);
-
-        $konsumen->update([
-            'nama' => $request->nama,
-            'no_hp' => $request->no_hp,
-            'email' => $request->email,
-            'alamat' => $request->alamat,
-            'sumber_lead' => $request->sumber_lead,
-            'status' => $request->status ?? $konsumen->status,
-        ]);
-
-        // 🔥 UPDATE RELASI PRODUK
-        $konsumen->produks()->sync($request->produk_id ?? []);
-
-        return redirect()->route('konsumen.index')
-            ->with('success','Data konsumen berhasil diupdate');
+    if ($user->role === 'marketing' && $konsumen->user_id !== $user->id) {
+        abort(403, 'Tidak punya akses');
     }
+
+    $request->validate([
+        'nama' => 'required|string|max:255',
+        'no_hp' => [
+            'required',
+            'digits:12',
+            Rule::unique('konsumens', 'no_hp')->ignore($konsumen->id),
+        ],
+        'sumber_lead' => 'required|string|max:255',
+        'email' => 'nullable|email|max:255',
+        'alamat' => 'nullable|string',
+        'status' => 'nullable|in:Prospek,Deal,Tidak Tertarik',
+
+        'produk_id' => 'nullable|array',
+        'produk_id.*' => 'exists:produks,id',
+    ], [
+        'no_hp.required' => 'Nomor HP wajib diisi',
+        'no_hp.digits' => 'Nomor HP harus tepat 12 digit',
+        'no_hp.unique' => 'Nomor HP sudah terdaftar',
+    ]);
+
+    $konsumen->update([
+        'nama' => $request->nama,
+        'no_hp' => $request->no_hp,
+        'email' => $request->email,
+        'alamat' => $request->alamat,
+        'sumber_lead' => $request->sumber_lead,
+        'status' => $request->status ?? $konsumen->status,
+    ]);
+
+    $konsumen->produks()->sync($request->produk_id ?? []);
+
+    return redirect()->route('konsumen.index')
+        ->with('success', 'Data konsumen berhasil diupdate');
+}
 
     // ==============================
     // HAPUS DATA

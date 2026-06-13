@@ -33,14 +33,14 @@ class ProdukController extends Controller
         $request->validate([
             'nama' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
-            'harga' => 'required|numeric|min:0',
+            'harga' => 'required',
             'stok' => 'required|integer|min:0',
         ]);
 
         Produk::create([
             'nama' => $request->nama,
             'deskripsi' => $request->deskripsi,
-            'harga' => $request->harga,
+            'harga' => str_replace('.', '', $request->harga),
             'stok' => $request->stok,
         ]);
 
@@ -64,14 +64,14 @@ class ProdukController extends Controller
         $request->validate([
             'nama' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
-            'harga' => 'required|numeric|min:0',
+            'harga' => 'required',
             'stok' => 'required|integer|min:0',
         ]);
 
         $produk->update([
             'nama' => $request->nama,
             'deskripsi' => $request->deskripsi,
-            'harga' => $request->harga,
+            'harga' => str_replace('.', '', $request->harga),
             'stok' => $request->stok,
         ]);
 
@@ -80,11 +80,10 @@ class ProdukController extends Controller
     }
 
     // ===============================
-    // HAPUS PRODUK (🔥 FIX RELASI)
+    // HAPUS PRODUK
     // ===============================
     public function destroy(Produk $produk)
     {
-        // 🔥 HAPUS RELASI KE KONSUMEN DULU
         if (method_exists($produk, 'konsumens')) {
             $produk->konsumens()->detach();
         }
@@ -96,11 +95,10 @@ class ProdukController extends Controller
     }
 
     // ===============================
-    // DETAIL PRODUK (BONUS 🔥)
+    // DETAIL PRODUK
     // ===============================
     public function show(Produk $produk)
     {
-        // 🔥 tampilkan konsumen yang minat produk ini
         $produk->load('konsumens');
 
         return view('produk.show', compact('produk'));

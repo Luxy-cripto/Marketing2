@@ -108,7 +108,7 @@
                             <th>Konsumen</th>
                             <th>No HP</th>
                             <th>Produk</th>
-                            <th>Qty</th>
+                            <th>Jumlah Produk</th>
                             <th>Harga</th>
                             <th>Total</th>
                             <th>Tanggal</th>
